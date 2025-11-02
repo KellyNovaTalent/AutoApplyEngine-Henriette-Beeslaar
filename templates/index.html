@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-sm mb-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">📧 Job Application System</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button 
+                        onclick="syncEmails()" 
+                        id="syncBtn"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
+                    >
+                        <span id="syncText">🔄 Sync Emails</span>
+                    </button>
+                    <a href="/logout" class="text-gray-600 hover:text-gray-900">Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-600">Total Jobs</div>
+                <div class="text-3xl font-bold text-gray-900">{{ stats.total_jobs }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-600">New Jobs</div>
+                <div class="text-3xl font-bold text-blue-600">{{ stats.new_jobs }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-600">Applied</div>
+                <div class="text-3xl font-bold text-green-600">{{ stats.applied }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="text-sm text-gray-600">Auto-Rejected</div>
+                <div class="text-3xl font-bold text-red-600">{{ stats.auto_rejected }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow mb-6 p-4">
+            <form method="GET" class="flex flex-wrap gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <select name="source" class="border border-gray-300 rounded px-3 py-2">
+                        <option value="all" {% if not filters.source or filters.source == 'all' %}selected{% endif %}>All Sources</option>
+                        <option value="LinkedIn" {% if filters.source == 'LinkedIn' %}selected{% endif %}>LinkedIn</option>
+                        <option value="Seek NZ" {% if filters.source == 'Seek NZ' %}selected{% endif %}>Seek NZ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" class="border border-gray-300 rounded px-3 py-2">
+                        <option value="all" {% if not filters.status or filters.status == 'all' %}selected{% endif %}>All Status</option>
+                        <option value="new" {% if filters.status == 'new' %}selected{% endif %}>New</option>
+                        <option value="analyzing" {% if filters.status == 'analyzing' %}selected{% endif %}>Analyzing</option>
+                        <option value="applied" {% if filters.status == 'applied' %}selected{% endif %}>Applied</option>
+                        <option value="auto-rejected" {% if filters.status == 'auto-rejected' %}selected{% endif %}>Auto-Rejected</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="jobsList" class="space-y-4">
+            {% for job in jobs %}
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h2 class="text-xl font-bold text-gray-900">{{ job.job_title }}</h2>
+                            {% if job.source_platform == 'LinkedIn' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                LinkedIn
+                            </span>
+                            {% elif job.source_platform == 'Seek NZ' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                Seek NZ
+                            </span>
+                            {% endif %}
+                            
+                            {% if job.status == 'new' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                New
+                            </span>
+                            {% elif job.status == 'applied' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                Applied
+                            </span>
+                            {% elif job.status == 'auto-rejected' %}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                Auto-Rejected
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-gray-600 mb-2">
+                            <span class="font-semibold">{{ job.company_name }}</span>
+                            {% if job.location %}
+                            <span class="mx-2">•</span>
+                            <span>{{ job.location }}</span>
+                            {% endif %}
+                            {% if job.salary_info %}
+                            <span class="mx-2">•</span>
+                            <span class="text-green-600 font-medium">{{ job.salary_info }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if job.description %}
+                        <p class="text-gray-700 text-sm mb-3">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+                        {% endif %}
+                        
+                        {% if job.rejection_reason %}
+                        <div class="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
+                            <p class="text-red-700 text-sm">{{ job.rejection_reason }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <span>📅 {{ job.date_received[:10] }}</span>
+                            {% if job.match_score > 0 %}
+                            <span>🎯 Match: {{ job.match_score }}%</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="ml-4">
+                        <a 
+                            href="{{ job.job_url }}" 
+                            target="_blank" 
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block mb-2"
+                        >
+                            View Job
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not jobs %}
+            <div class="bg-white rounded-lg shadow p-12 text-center">
+                <p class="text-gray-500 text-lg">No jobs found. Click "Sync Emails" to fetch new job alerts.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function syncEmails() {
+            const btn = document.getElementById('syncBtn');
+            const text = document.getElementById('syncText');
+            
+            btn.disabled = true;
+            text.textContent = '⏳ Syncing...';
+            
+            fetch('/api/sync', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ Sync complete!\n\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
+                        window.location.reload();
+                    } else {
+                        alert('❌ Error: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    alert('❌ Error syncing emails: ' + error);
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    text.textContent = '🔄 Sync Emails';
+                });
+        }
+    </script>
+</body>
+</html>

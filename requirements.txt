@@ -1,0 +1,16 @@
+Flask==3.0.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.111.0
+beautifulsoup4==4.12.2
+APScheduler==3.10.4
+python-dotenv==1.0.0
+APScheduler
+beautifulsoup4
+Flask
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
+python-dotenv

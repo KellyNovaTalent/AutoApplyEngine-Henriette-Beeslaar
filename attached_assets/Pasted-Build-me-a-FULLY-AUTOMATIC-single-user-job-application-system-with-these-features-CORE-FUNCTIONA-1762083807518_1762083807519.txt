@@ -1,0 +1,65 @@
+Build me a FULLY AUTOMATIC single-user job application system with these features:
+
+CORE FUNCTIONALITY:
+1. Connect to my Gmail account using Gmail API
+
+2. Monitor for job alert emails from MULTIPLE sources:
+   - LinkedIn job alerts (from "LinkedIn Job Alerts" or jobs-listings@linkedin.com)
+   - Seek NZ job alerts (from "noreply@seek.co.nz" or "job-alerts@seek.co.nz")
+   - Any other job alert emails (make it flexible to add more sources later)
+
+3. Parse emails from each platform to extract:
+   - Job title
+   - Company name
+   - Location
+   - Job description/snippet
+   - Job URL (LinkedIn URL or Seek URL)
+   - Posted date
+   - Source platform (LinkedIn, Seek, etc.)
+   - Salary info (if available)
+
+4. CRITICAL FILTER - Auto-reject before analysis:
+   - Automatically reject and skip any job with "visa sponsorship" in the title
+   - Automatically reject and skip any job with "sponsorship" in the title
+   - Mark these as "auto-rejected - sponsorship in title"
+   - Don't waste AI credits analyzing these jobs
+
+5. Store all extracted jobs in SQLite database with fields:
+   - Job details (title, company, location, description, url)
+   - Source platform (LinkedIn, Seek NZ, etc.)
+   - Date received
+   - Status (new, analyzing, applied, auto-rejected)
+   - Rejection reason (if auto-rejected)
+   - AI match score percentage (0-100%)
+   - Application date/time if applied
+   - Notes
+
+6. Create a web dashboard that shows:
+   - All jobs from ALL alert sources
+   - Filter by source platform (LinkedIn, Seek, Both)
+   - Filter by status and match score
+   - View application history
+   - See generated cover letters
+   - Statistics (total applications, filtered for sponsorship, success rate, etc.)
+
+TECHNICAL REQUIREMENTS:
+- Use Python with Gmail API
+- Use Flask for web framework
+- Use SQLite for database
+- Simple, clean UI with Tailwind CSS
+- Add authentication so only I can access (single user only)
+- Check for new emails every 30 minutes automatically
+- Run application workflow automatically without human intervention
+
+IMPORTANT: 
+- This is a SINGLE-USER system (not multi-tenant, just for me)
+- ALWAYS filter out "visa sponsorship" jobs BEFORE AI analysis
+- Handle different email formats from LinkedIn vs Seek NZ
+- LinkedIn often sends digest emails with multiple jobs
+- Seek NZ usually sends individual job alerts
+- Don't process the same job twice (check if URL already exists)
+- Make the email parser flexible to handle variations in format
+- Add visual badges/tags showing "LinkedIn" or "Seek NZ" source
+- Process everything automatically - NO approval workflow needed
+
+Build this step by step and test that Gmail connection and email parsing works correctly.
