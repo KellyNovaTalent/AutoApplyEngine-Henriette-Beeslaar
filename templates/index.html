@@ -3,245 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application AI Assistant</title>
+    <title>JobCopilot - Automated Job Applications</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
-    <nav class="bg-white shadow-sm mb-6">
+<body class="bg-gray-100">
+    <!-- Top Navigation -->
+    <nav class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">🤖 Job Application AI Assistant</h1>
+                    <div class="flex-shrink-0 flex items-center">
+                        <div class="gradient-bg text-white font-bold text-xl px-3 py-1 rounded-lg">JC</div>
+                        <span class="ml-3 text-xl font-semibold text-gray-900">JobCopilot</span>
+                    </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/logout" class="text-gray-600 hover:text-gray-900">Logout</a>
+                <div class="flex items-center space-x-6">
+                    <span class="text-sm text-gray-600">Henriëtte Beeslaar</span>
+                    <a href="/logout" class="text-sm text-gray-600 hover:text-gray-900">Logout</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Upload Section - JobCopilot Style -->
-        <div class="bg-white rounded-lg shadow-lg p-8 mb-6 border-t-4 border-blue-600">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-3">Import Jobs from Your Scrapers</h2>
-                <p class="text-gray-600 text-lg">Run your local scrapers and upload the CSV files below</p>
-                <div class="flex justify-center gap-4 mt-3 text-sm text-gray-500">
-                    <span>🤖 AI Match Scoring</span>
-                    <span>•</span>
-                    <span>✍️ Auto Cover Letters</span>
-                    <span>•</span>
-                    <span>📧 Auto Email Applications</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Quick Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Total Applications</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ stats.total_jobs }}</p>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
             
-            <!-- Two Upload Buttons Side by Side -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                <!-- Seek CSV Upload -->
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200 hover:border-green-400 transition-all">
-                    <div class="text-center mb-4">
-                        <div class="text-4xl mb-3">🔍</div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Seek NZ Jobs</h3>
-                        <p class="text-sm text-gray-600 mb-4">Upload CSV from your Seek scraper<br/><code class="text-xs">run_seek_last7.py</code></p>
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Auto-Applied</p>
+                        <p class="text-3xl font-bold text-green-600 mt-2">{{ stats.get('applied', 0) }}</p>
                     </div>
-                    <label for="seekFile" class="block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg text-center cursor-pointer shadow-md transition-all hover:shadow-lg">
-                        <span class="text-lg">📤 Upload Seek CSV</span>
+                    <div class="bg-green-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">High Matches (70%+)</p>
+                        <p class="text-3xl font-bold text-purple-600 mt-2">{{ stats.high_matches }}</p>
+                    </div>
+                    <div class="bg-purple-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pending Review</p>
+                        <p class="text-3xl font-bold text-orange-600 mt-2">{{ stats.medium_matches }}</p>
+                    </div>
+                    <div class="bg-orange-100 rounded-full p-3">
+                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Jobs Section -->
+        <div class="bg-white rounded-xl shadow-sm mb-8 border border-gray-200">
+            <div class="px-6 py-5 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Import New Jobs</h2>
+                <p class="mt-1 text-sm text-gray-600">Upload CSV files from your local job scrapers</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Seek Upload -->
+                    <label for="seekFile" class="cursor-pointer">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-purple-500 transition-all hover:bg-purple-50">
+                            <div class="text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="mt-2 text-sm font-medium text-gray-900">Seek NZ Jobs</p>
+                                <p class="mt-1 text-xs text-gray-500">Click to upload CSV from run_seek_last7.py</p>
+                            </div>
+                        </div>
                         <input type="file" id="seekFile" accept=".csv" class="hidden" onchange="uploadSeekCSV(event)">
                     </label>
-                </div>
-                
-                <!-- Education Gazette CSV Upload -->
-                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 hover:border-purple-400 transition-all">
-                    <div class="text-center mb-4">
-                        <div class="text-4xl mb-3">🏫</div>
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">Education Gazette</h3>
-                        <p class="text-sm text-gray-600 mb-4">Upload CSV from your Gazette scraper<br/><code class="text-xs">gazette_scraper.py</code></p>
-                    </div>
-                    <label for="gazetteFile" class="block bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg text-center cursor-pointer shadow-md transition-all hover:shadow-lg">
-                        <span class="text-lg">📤 Upload Gazette CSV</span>
+                    
+                    <!-- Gazette Upload -->
+                    <label for="gazetteFile" class="cursor-pointer">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-purple-500 transition-all hover:bg-purple-50">
+                            <div class="text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                                <p class="mt-2 text-sm font-medium text-gray-900">Education Gazette NZ</p>
+                                <p class="mt-1 text-xs text-gray-500">Click to upload CSV from gazette_scraper.py</p>
+                            </div>
+                        </div>
                         <input type="file" id="gazetteFile" accept=".csv" class="hidden" onchange="uploadGazetteCSV(event)">
                     </label>
                 </div>
+                
+                <!-- Progress -->
+                <div id="uploadProgress" class="hidden mt-4">
+                    <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                        <div class="flex items-center">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600 mr-3"></div>
+                            <span class="text-sm font-medium text-gray-700" id="uploadProgressText">Processing...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Progress Indicator -->
-            <div id="uploadProgress" class="hidden mt-6 max-w-2xl mx-auto">
-                <div class="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
-                    <div class="flex items-center justify-center">
-                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                        <span class="text-gray-700 font-medium" id="uploadProgressText">Processing jobs...</span>
+        </div>
+
+        <!-- Application Tracker -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-5 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Application Tracker</h2>
+                        <p class="mt-1 text-sm text-gray-600">All job applications and their statuses</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                            <option>All Statuses</option>
+                            <option>Auto-Applied</option>
+                            <option>Ready to Apply</option>
+                            <option>New</option>
+                        </select>
+                        <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                            <option>All Sources</option>
+                            <option>Seek NZ</option>
+                            <option>Education Gazette</option>
+                        </select>
                     </div>
                 </div>
             </div>
             
-            <!-- Help Text -->
-            <div class="mt-6 text-center text-sm text-gray-500">
-                <p>💡 System automatically detects CSV format and imports all jobs</p>
-                <p class="mt-1">Jobs are analyzed by AI and applications are sent to 70%+ matches</p>
-            </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Total Jobs</div>
-                <div class="text-3xl font-bold text-gray-900">{{ stats.total_jobs }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Excellent (70%+)</div>
-                <div class="text-3xl font-bold text-green-600">{{ stats.high_matches }}</div>
-                <div class="text-xs text-gray-500 mt-1">Auto-apply</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Good (50-69%)</div>
-                <div class="text-3xl font-bold text-yellow-600">{{ stats.medium_matches }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Lower (<50%)</div>
-                <div class="text-3xl font-bold text-gray-600">{{ stats.low_matches }}</div>
-            </div>
-            <div class="bg-purple-50 rounded-lg shadow p-6 border-2 border-purple-200">
-                <div class="text-sm text-purple-700 font-medium">Applied</div>
-                <div class="text-3xl font-bold text-purple-600">{{ stats.get('applied', 0) }}</div>
-                <div class="text-xs text-purple-500 mt-1">Auto-sent</div>
-            </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="bg-white rounded-lg shadow mb-6 p-4">
-            <form method="GET" class="flex flex-wrap gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Match Score</label>
-                    <select name="match" class="border border-gray-300 rounded px-3 py-2">
-                        <option value="all">All Matches</option>
-                        <option value="high">Excellent (70%+)</option>
-                        <option value="medium">Good (50-69%)</option>
-                        <option value="low">Lower (<50%)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                    <select name="source" class="border border-gray-300 rounded px-3 py-2">
-                        <option value="all">All Sources</option>
-                        <option value="LinkedIn">LinkedIn</option>
-                        <option value="Seek NZ">Seek NZ</option>
-                        <option value="Education Gazette NZ">Education Gazette</option>
-                    </select>
-                </div>
-                <div class="flex items-end">
-                    <button type="submit" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                        Filter
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Jobs List -->
-        <div id="jobsList" class="space-y-4">
-            {% for job in jobs %}
-            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow border-l-4 
-                {% if job.match_score >= 70 %}border-green-500
-                {% elif job.match_score >= 50 %}border-yellow-500
-                {% else %}border-gray-300{% endif %}">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2">
-                            <h2 class="text-xl font-bold text-gray-900">{{ job.job_title }}</h2>
-                            
-                            <!-- Match Score Badge -->
-                            {% if job.match_score %}
-                            <span class="px-3 py-1 text-sm font-bold rounded-full
-                                {% if job.match_score >= 70 %}bg-green-100 text-green-800
-                                {% elif job.match_score >= 50 %}bg-yellow-100 text-yellow-800
-                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ job.match_score }}% Match
-                            </span>
-                            {% endif %}
-                            
-                            <!-- Source Badge -->
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                {% if job.source_platform == 'LinkedIn' %}bg-blue-100 text-blue-800
-                                {% elif job.source_platform == 'Seek NZ' %}bg-green-100 text-green-800
-                                {% else %}bg-purple-100 text-purple-800{% endif %}">
-                                {{ job.source_platform }}
-                            </span>
-                            
-                            <!-- Status Badge -->
-                            {% if job.status == 'applied' %}
-                            <span class="px-3 py-1 text-xs font-bold rounded-full bg-green-500 text-white">
-                                ✅ APPLIED
-                            </span>
-                            {% elif job.status == 'ready_to_apply' %}
-                            <span class="px-3 py-1 text-xs font-bold rounded-full bg-orange-500 text-white animate-pulse">
-                                📋 READY TO APPLY
-                            </span>
-                            {% endif %}
-                        </div>
-                        
-                        <p class="text-gray-700 font-medium mb-2">{{ job.company_name }}</p>
-                        <p class="text-gray-600 text-sm mb-3">📍 {{ job.location }}</p>
-                        
-                        {% if job.ai_analysis %}
-                        <div class="bg-blue-50 rounded-lg p-4 mb-3">
-                            <h3 class="font-semibold text-gray-900 mb-2">🤖 AI Analysis:</h3>
-                            <p class="text-gray-700 text-sm whitespace-pre-line">{{ job.ai_analysis }}</p>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Status-specific action buttons -->
-                        <div class="flex gap-2 mt-4">
-                            {% if job.status == 'applied' %}
-                                <!-- Already applied - show confirmation -->
-                                <div class="bg-green-50 border border-green-200 rounded px-4 py-2 flex items-center gap-2">
-                                    <span class="text-green-700 font-semibold">✅ Application Sent via Email</span>
+            <!-- Jobs Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company & Position</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Match</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for job in jobs %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ job.job_title }}</div>
+                                        <div class="text-sm text-gray-500">{{ job.company_name }} • {{ job.location }}</div>
+                                    </div>
                                 </div>
-                                <a href="{{ job.job_url }}" target="_blank" 
-                                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded inline-flex items-center text-sm">
-                                    View Original Job →
-                                </a>
-                            
-                            {% elif job.status == 'ready_to_apply' %}
-                                <!-- Ready to apply manually - prominent CTA -->
-                                <a href="{{ job.job_url }}" target="_blank" 
-                                   class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-6 rounded inline-flex items-center text-sm shadow-lg animate-pulse">
-                                    🚀 APPLY NOW (Cover Letter Ready!)
-                                </a>
-                                <button onclick="alert('Cover letter and CV are ready! Click the APPLY NOW button to go to the job portal and submit your application.')" 
-                                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center text-sm">
-                                    📄 View Cover Letter
-                                </button>
-                            
-                            {% else %}
-                                <!-- New job - standard view button -->
-                                <a href="{{ job.job_url }}" target="_blank" 
-                                   class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center text-sm">
-                                    View Job →
-                                </a>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Show notes if available (contains application instructions) -->
-                        {% if job.notes %}
-                        <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded p-3">
-                            <p class="text-sm text-gray-700">💡 {{ job.notes }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="text-right text-sm text-gray-500">
-                        {{ job.posted_date }}
-                    </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if job.match_score %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if job.match_score >= 70 %}bg-green-100 text-green-800
+                                    {% elif job.match_score >= 50 %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ job.match_score }}%
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if job.status == 'applied' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Applied
+                                </span>
+                                {% elif job.status == 'ready_to_apply' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    Ready
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    New
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-500">{{ job.source_platform }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-500">{{ job.posted_date }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ job.job_url }}" target="_blank" class="text-purple-600 hover:text-purple-900">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                {% if not jobs %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No applications yet</h3>
+                    <p class="mt-1 text-sm text-gray-500">Upload a CSV file to start importing jobs</p>
                 </div>
+                {% endif %}
             </div>
-            {% endfor %}
-            
-            {% if not jobs %}
-            <div class="bg-white rounded-lg shadow p-12 text-center">
-                <div class="text-6xl mb-4">📋</div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">No Jobs Yet</h3>
-                <p class="text-gray-600">Paste job URLs above and click "Analyze Jobs with AI" to get started!</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 
