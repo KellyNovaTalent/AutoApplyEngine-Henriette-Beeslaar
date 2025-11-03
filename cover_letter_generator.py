@@ -62,12 +62,14 @@ Write the complete cover letter now:"""
     )
     
     # Extract text from response
+    cover_letter = ""
     for block in response.content:
-        if hasattr(block, 'text'):
+        if block.type == 'text':
             cover_letter = block.text.strip()
             break
-    else:
-        cover_letter = str(response.content[0])
+    
+    if not cover_letter:
+        cover_letter = str(response.content)
     
     print(f"✍️  Generated cover letter ({len(cover_letter)} chars)")
     return cover_letter
