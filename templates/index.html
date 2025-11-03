@@ -21,82 +21,63 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Job Search & Upload Section -->
-        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-8 mb-6">
-            <div class="mb-4">
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 Job Application Automation</h2>
-                <p class="text-gray-700">Upload jobs from your local scrapers or try direct Education Gazette search</p>
-                <p class="text-sm text-gray-600 mt-1">🤖 AI analyzes matches  •  ✍️ Generates cover letters  •  📧 Auto-emails applications to 70%+ matches</p>
-            </div>
-            
-            <div class="flex flex-wrap gap-3 mb-4">
-                <label for="jobFile" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap cursor-pointer">
-                    <span>📤 Upload Job CSV</span>
-                    <input type="file" id="jobFile" accept=".csv" class="hidden" onchange="uploadJobCSV(event)">
-                </label>
-                
-                <button 
-                    onclick="scrapeEducationGazette()" 
-                    id="gazetteBtn"
-                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap"
-                >
-                    <span id="gazetteText">📰 Try Education Gazette Scrape</span>
-                </button>
-            </div>
-            
-            <div class="text-sm text-gray-600 bg-white rounded-lg p-4 border border-gray-200">
-                <p class="font-semibold mb-2">💡 Supported CSV Formats:</p>
-                <ul class="list-disc list-inside space-y-1">
-                    <li><strong>Education Gazette:</strong> Run your local scraper → Upload CSV</li>
-                    <li><strong>Seek NZ:</strong> Run <code>run_seek_last7.py</code> → Upload CSV</li>
-                </ul>
-                <p class="mt-2 text-xs">System auto-detects format and imports jobs with AI matching!</p>
-            </div>
-            
-            <div id="autoSearchProgress" class="hidden mt-4">
-                <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
-                    <div class="flex items-center">
-                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-3"></div>
-                        <span class="text-gray-700 font-medium" id="autoSearchProgressText">Searching for jobs...</span>
-                    </div>
+        <!-- Upload Section - JobCopilot Style -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-6 border-t-4 border-blue-600">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-3">Import Jobs from Your Scrapers</h2>
+                <p class="text-gray-600 text-lg">Run your local scrapers and upload the CSV files below</p>
+                <div class="flex justify-center gap-4 mt-3 text-sm text-gray-500">
+                    <span>🤖 AI Match Scoring</span>
+                    <span>•</span>
+                    <span>✍️ Auto Cover Letters</span>
+                    <span>•</span>
+                    <span>📧 Auto Email Applications</span>
                 </div>
             </div>
-        </div>
-
-        <!-- Manual URL Paste Section (Optional) -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-8 mb-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Manual URL Analysis (Optional)</h2>
-            <p class="text-gray-700 mb-4">Paste job URLs from LinkedIn, Seek NZ, or Education Gazette (one per line). AI will analyze each job against your CV and calculate match scores.</p>
             
-            <form id="analyzeForm" onsubmit="analyzeJobs(event)">
-                <textarea 
-                    id="jobUrls" 
-                    rows="6" 
-                    placeholder="https://www.linkedin.com/jobs/view/123456&#10;https://www.seek.co.nz/job/654321&#10;https://gazette.education.govt.nz/vacancies/..."
-                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-                ></textarea>
-                
-                <div class="flex justify-between items-center mt-4">
-                    <div class="text-sm text-gray-600">
-                        💡 Tip: Copy job URLs directly from your browser
+            <!-- Two Upload Buttons Side by Side -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                <!-- Seek CSV Upload -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200 hover:border-green-400 transition-all">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-3">🔍</div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Seek NZ Jobs</h3>
+                        <p class="text-sm text-gray-600 mb-4">Upload CSV from your Seek scraper<br/><code class="text-xs">run_seek_last7.py</code></p>
                     </div>
-                    <button 
-                        type="submit" 
-                        id="analyzeBtn"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md"
-                    >
-                        <span id="analyzeText">🔍 Analyze Jobs with AI</span>
-                    </button>
+                    <label for="seekFile" class="block bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg text-center cursor-pointer shadow-md transition-all hover:shadow-lg">
+                        <span class="text-lg">📤 Upload Seek CSV</span>
+                        <input type="file" id="seekFile" accept=".csv" class="hidden" onchange="uploadSeekCSV(event)">
+                    </label>
                 </div>
-            </form>
-
-            <div id="analysisProgress" class="mt-4 hidden">
-                <div class="bg-white rounded-lg p-4 border-2 border-blue-200">
-                    <div class="flex items-center">
+                
+                <!-- Education Gazette CSV Upload -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200 hover:border-purple-400 transition-all">
+                    <div class="text-center mb-4">
+                        <div class="text-4xl mb-3">🏫</div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Education Gazette</h3>
+                        <p class="text-sm text-gray-600 mb-4">Upload CSV from your Gazette scraper<br/><code class="text-xs">gazette_scraper.py</code></p>
+                    </div>
+                    <label for="gazetteFile" class="block bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg text-center cursor-pointer shadow-md transition-all hover:shadow-lg">
+                        <span class="text-lg">📤 Upload Gazette CSV</span>
+                        <input type="file" id="gazetteFile" accept=".csv" class="hidden" onchange="uploadGazetteCSV(event)">
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Progress Indicator -->
+            <div id="uploadProgress" class="hidden mt-6 max-w-2xl mx-auto">
+                <div class="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+                    <div class="flex items-center justify-center">
                         <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                        <span class="text-gray-700 font-medium" id="progressText">Analyzing jobs...</span>
+                        <span class="text-gray-700 font-medium" id="uploadProgressText">Processing jobs...</span>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Help Text -->
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>💡 System automatically detects CSV format and imports all jobs</p>
+                <p class="mt-1">Jobs are analyzed by AI and applications are sent to 70%+ matches</p>
             </div>
         </div>
 
@@ -265,107 +246,16 @@
     </div>
 
     <script>
-        async function analyzeJobs(event) {
-            event.preventDefault();
-            
-            const urls = document.getElementById('jobUrls').value.trim();
-            if (!urls) {
-                alert('Please paste at least one job URL');
-                return;
-            }
-            
-            const btn = document.getElementById('analyzeBtn');
-            const btnText = document.getElementById('analyzeText');
-            const progress = document.getElementById('analysisProgress');
-            const progressText = document.getElementById('progressText');
-            
-            btn.disabled = true;
-            btnText.textContent = '⏳ Analyzing...';
-            progress.classList.remove('hidden');
-            
-            try {
-                const response = await fetch('/analyze_jobs', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ urls: urls })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    progressText.textContent = `✅ Analyzed ${data.jobs_analyzed} jobs! Refreshing...`;
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    alert('Error: ' + (data.error || 'Failed to analyze jobs'));
-                    progress.classList.add('hidden');
-                    btn.disabled = false;
-                    btnText.textContent = '🔍 Analyze Jobs with AI';
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-                progress.classList.add('hidden');
-                btn.disabled = false;
-                btnText.textContent = '🔍 Analyze Jobs with AI';
-            }
-        }
         
-        async function generateCoverLetter(jobId) {
-            if (!confirm('Generate cover letter and prepare application for this job?')) {
-                return;
-            }
-            
-            alert('Cover letter generation coming soon! This will use Claude AI to create a personalized cover letter based on your CV and the job description.');
-        }
-        
-        async function scrapeEducationGazette() {
-            const btn = document.getElementById('gazetteBtn');
-            const btnText = document.getElementById('gazetteText');
-            const progress = document.getElementById('autoSearchProgress');
-            const progressText = document.getElementById('autoSearchProgressText');
-            
-            btn.disabled = true;
-            btnText.textContent = '⏳ Scraping...';
-            progress.classList.remove('hidden');
-            progressText.textContent = 'Searching Education Gazette NZ for Foundation Phase jobs...';
-            
-            try {
-                const response = await fetch('/scrape_education_gazette', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    progressText.textContent = `✅ Found ${data.jobs_found} jobs from Education Gazette! Refreshing...`;
-                    setTimeout(() => window.location.reload(), 2000);
-                } else {
-                    alert('Education Gazette: ' + (data.error || 'Scraper blocked by website. Please use CSV upload instead.'));
-                    progress.classList.add('hidden');
-                    btn.disabled = false;
-                    btnText.textContent = '📰 Search Education Gazette';
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-                progress.classList.add('hidden');
-                btn.disabled = false;
-                btnText.textContent = '📰 Search Education Gazette';
-            }
-        }
-        
-        async function uploadJobCSV(event) {
+        async function uploadSeekCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
             
-            const progress = document.getElementById('autoSearchProgress');
-            const progressText = document.getElementById('autoSearchProgressText');
+            const progress = document.getElementById('uploadProgress');
+            const progressText = document.getElementById('uploadProgressText');
             
             progress.classList.remove('hidden');
-            progressText.textContent = 'Uploading and processing CSV...';
+            progressText.textContent = '🔍 Uploading Seek jobs... AI analyzing each job...';
             
             const formData = new FormData();
             formData.append('file', file);
@@ -379,8 +269,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    progressText.textContent = `✅ Imported ${data.jobs_imported} jobs! AI analyzing and auto-applying... Refreshing...`;
-                    setTimeout(() => window.location.reload(), 2000);
+                    progressText.textContent = `✅ Imported ${data.jobs_imported} Seek jobs! Auto-applying to 70%+ matches... Refreshing...`;
+                    setTimeout(() => window.location.reload(), 2500);
                 } else {
                     alert('Error: ' + (data.error || 'Upload failed'));
                     progress.classList.add('hidden');
@@ -393,42 +283,40 @@
             event.target.value = '';
         }
         
-        async function autoSearchJobs() {
-            const btn = document.getElementById('autoSearchBtn');
-            const btnText = document.getElementById('autoSearchText');
-            const progress = document.getElementById('autoSearchProgress');
-            const progressText = document.getElementById('autoSearchProgressText');
+        async function uploadGazetteCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
             
-            btn.disabled = true;
-            btnText.textContent = '⏳ Searching...';
+            const progress = document.getElementById('uploadProgress');
+            const progressText = document.getElementById('uploadProgressText');
+            
             progress.classList.remove('hidden');
-            progressText.textContent = 'Searching LinkedIn + Seek NZ for teaching jobs...';
+            progressText.textContent = '🏫 Uploading Education Gazette jobs... AI analyzing each job...';
+            
+            const formData = new FormData();
+            formData.append('file', file);
             
             try {
-                const response = await fetch('/auto_search_jobs', {
+                const response = await fetch('/upload_gazette_csv', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
+                    body: formData
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    progressText.textContent = `✅ Found ${data.jobs_found} new jobs! AI analyzing and auto-applying to 70%+ matches...`;
-                    setTimeout(() => window.location.reload(), 2000);
+                    progressText.textContent = `✅ Imported ${data.jobs_imported} Gazette jobs! Auto-applying to 70%+ matches... Refreshing...`;
+                    setTimeout(() => window.location.reload(), 2500);
                 } else {
-                    alert('Error: ' + (data.error || 'Auto-search failed'));
+                    alert('Error: ' + (data.error || 'Upload failed'));
                     progress.classList.add('hidden');
-                    btn.disabled = false;
-                    btnText.textContent = '🔍 Auto Search Jobs';
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
                 progress.classList.add('hidden');
-                btn.disabled = false;
-                btnText.textContent = '🔍 Auto Search Jobs';
             }
+            
+            event.target.value = '';
         }
     </script>
 </body>
