@@ -8,25 +8,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
-from typing import Dict, Optional
+from typing import Dict, List, Optional
+from gmail_service import get_gmail_service
 
-def get_gmail_service():
-    """Get authenticated Gmail API service."""
-    creds = Credentials.from_authorized_user_file('token.json', 
-        ['https://www.googleapis.com/auth/gmail.send'])
-    return build('gmail', 'v1', credentials=creds)
-
-def create_email_with_attachment(to: str, subject: str, body: str, attachment_path: Optional[str] = None) -> Dict:
+def create_email_with_attachments(to: str, subject: str, body: str, attachment_paths: List[str] = None) -> Dict:
     """
-    Create an email message with optional attachment.
+    Create an email message with multiple attachments.
     
     Args:
         to: Recipient email address
         subject: Email subject
         body: Email body text
-        attachment_path: Path to attachment file (optional)
+        attachment_paths: List of paths to attachment files (optional)
     
     Returns:
         Dictionary with 'raw' email ready to send
@@ -38,38 +31,43 @@ def create_email_with_attachment(to: str, subject: str, body: str, attachment_pa
     # Add body
     message.attach(MIMEText(body, 'plain'))
     
-    # Add attachment if provided
-    if attachment_path and os.path.exists(attachment_path):
-        with open(attachment_path, 'rb') as file:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(file.read())
-            encoders.encode_base64(part)
-            part.add_header(
-                'Content-Disposition',
-                f'attachment; filename= {os.path.basename(attachment_path)}'
-            )
-            message.attach(part)
+    # Add all attachments
+    if attachment_paths:
+        for attachment_path in attachment_paths:
+            if attachment_path and os.path.exists(attachment_path):
+                with open(attachment_path, 'rb') as file:
+                    part = MIMEBase('application', 'octet-stream')
+                    part.set_payload(file.read())
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        'Content-Disposition',
+                        f'attachment; filename={os.path.basename(attachment_path)}'
+                    )
+                    message.attach(part)
+                print(f"   📎 Attached: {os.path.basename(attachment_path)}")
+            else:
+                print(f"   ⚠️  Attachment not found: {attachment_path}")
     
     # Encode message
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
     return {'raw': raw_message}
 
-def send_email_via_gmail(to: str, subject: str, body: str, attachment_path: Optional[str] = None) -> bool:
+def send_email_via_gmail(to: str, subject: str, body: str, attachment_paths: List[str] = None) -> bool:
     """
-    Send an email via Gmail API.
+    Send an email via Gmail API with multiple attachments.
     
     Args:
         to: Recipient email address
         subject: Email subject
         body: Email body text
-        attachment_path: Path to CV file (optional)
+        attachment_paths: List of paths to attachment files (CV, cover letter, etc.)
     
     Returns:
         True if sent successfully, False otherwise
     """
     try:
         service = get_gmail_service()
-        message = create_email_with_attachment(to, subject, body, attachment_path)
+        message = create_email_with_attachments(to, subject, body, attachment_paths or [])
         
         result = service.users().messages().send(
             userId='me',
@@ -88,11 +86,15 @@ def send_email_via_gmail(to: str, subject: str, body: str, attachment_path: Opti
 
 def send_job_application(recipient_email: str, application: Dict) -> bool:
     """
-    Send a complete job application via Gmail.
+    Send a complete job application via Gmail with CV and cover letter.
     
     Args:
         recipient_email: Email address to send application to
-        application: Dictionary with application details
+        application: Dictionary with application details including:
+            - email_subject: Email subject line
+            - email_body: Email body text
+            - cv_path: Path to CV PDF
+            - cover_letter_path: Path to cover letter PDF
     
     Returns:
         True if sent successfully, False otherwise
@@ -103,17 +105,29 @@ def send_job_application(recipient_email: str, application: Dict) -> bool:
     
     subject = application['email_subject']
     body = application['email_body']
-    cv_path = application.get('cv_path')
+    
+    # Collect all attachments
+    attachments = []
+    
+    if application.get('cv_path') and os.path.exists(application['cv_path']):
+        attachments.append(application['cv_path'])
+    
+    if application.get('cover_letter_path') and os.path.exists(application['cover_letter_path']):
+        attachments.append(application['cover_letter_path'])
+    
+    if not attachments:
+        print(f"   ⚠️  No attachments found (CV or cover letter)")
     
     print(f"   📧 Sending application to: {recipient_email}")
     print(f"   📎 Subject: {subject}")
+    print(f"   📄 Attachments: {len(attachments)}")
     
-    # Send email with CV attachment
+    # Send email with all attachments
     success = send_email_via_gmail(
         to=recipient_email,
         subject=subject,
         body=body,
-        attachment_path=cv_path if cv_path and os.path.exists(cv_path) else None
+        attachment_paths=attachments
     )
     
     return success

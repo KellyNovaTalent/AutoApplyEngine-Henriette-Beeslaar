@@ -9,7 +9,10 @@ from email_parser import parse_job_alert_email
 from database import insert_job, email_processed, mark_email_processed
 from ai_matcher import analyze_job_match, should_analyze_job
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send'
+]
 TOKEN_PATH = 'token.json'
 CREDENTIALS_PATH = 'credentials.json'
 

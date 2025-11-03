@@ -11,3 +11,4 @@ apify-client
 requests
 apify-client
 requests
+fpdf2

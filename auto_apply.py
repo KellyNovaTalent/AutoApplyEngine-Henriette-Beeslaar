@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from typing import Dict, Optional
 from cover_letter_generator import generate_cover_letter, generate_email_subject, generate_email_body
+from cover_letter_pdf import save_cover_letter_as_pdf
 from cv_profile import USER_PROFILE
 from database import update_job_status
 from email_sender import send_job_application
@@ -55,6 +56,13 @@ def prepare_application(job_data: dict) -> Dict:
     # Generate cover letter
     cover_letter = generate_cover_letter(job_data)
     
+    # Save cover letter as PDF
+    cover_letter_path = save_cover_letter_as_pdf(
+        cover_letter,
+        job_data['job_title'],
+        job_data.get('company_name', 'Company')
+    )
+    
     # Generate email
     email_subject = generate_email_subject(job_data)
     email_body = generate_email_body(job_data, cover_letter)
@@ -66,6 +74,7 @@ def prepare_application(job_data: dict) -> Dict:
         'job_title': job_data['job_title'],
         'company_name': job_data['company_name'],
         'cover_letter': cover_letter,
+        'cover_letter_path': cover_letter_path,  # Path to cover letter PDF
         'email_subject': email_subject,
         'email_body': email_body,
         'cv_path': user_profile.get('cv_path', 'cv.pdf'),
