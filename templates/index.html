@@ -21,35 +21,36 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- JobCopilot Auto Search Section -->
+        <!-- Job Search & Upload Section -->
         <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-8 mb-6">
             <div class="mb-4">
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 JobCopilot Auto-Search</h2>
-                <p class="text-gray-700">Automatically search LinkedIn + Seek NZ for teaching jobs in New Zealand</p>
-                <p class="text-sm text-gray-600 mt-1">✨ Runs every 3 hours  •  🤖 AI matches jobs  •  ✍️ Generates cover letters for 70%+ matches</p>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 Job Application Automation</h2>
+                <p class="text-gray-700">Upload jobs from your local scrapers or try direct Education Gazette search</p>
+                <p class="text-sm text-gray-600 mt-1">🤖 AI analyzes matches  •  ✍️ Generates cover letters  •  📧 Auto-emails applications to 70%+ matches</p>
             </div>
             
             <div class="flex flex-wrap gap-3 mb-4">
-                <button 
-                    onclick="autoSearchJobs()" 
-                    id="autoSearchBtn"
-                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap"
-                >
-                    <span id="autoSearchText">🔍 Auto Search Jobs</span>
-                </button>
+                <label for="jobFile" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap cursor-pointer">
+                    <span>📤 Upload Job CSV</span>
+                    <input type="file" id="jobFile" accept=".csv" class="hidden" onchange="uploadJobCSV(event)">
+                </label>
                 
                 <button 
                     onclick="scrapeEducationGazette()" 
                     id="gazetteBtn"
                     class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap"
                 >
-                    <span id="gazetteText">📰 Search Education Gazette</span>
+                    <span id="gazetteText">📰 Try Education Gazette Scrape</span>
                 </button>
-                
-                <label for="gazetteFile" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap cursor-pointer">
-                    <span>📤 Upload Gazette CSV</span>
-                    <input type="file" id="gazetteFile" accept=".csv" class="hidden" onchange="uploadGazetteCSV(event)">
-                </label>
+            </div>
+            
+            <div class="text-sm text-gray-600 bg-white rounded-lg p-4 border border-gray-200">
+                <p class="font-semibold mb-2">💡 Supported CSV Formats:</p>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><strong>Education Gazette:</strong> Run your local scraper → Upload CSV</li>
+                    <li><strong>Seek NZ:</strong> Run <code>run_seek_last7.py</code> → Upload CSV</li>
+                </ul>
+                <p class="mt-2 text-xs">System auto-detects format and imports jobs with AI matching!</p>
             </div>
             
             <div id="autoSearchProgress" class="hidden mt-4">
@@ -356,7 +357,7 @@
             }
         }
         
-        async function uploadGazetteCSV(event) {
+        async function uploadJobCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
             
@@ -378,7 +379,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    progressText.textContent = `✅ Imported ${data.jobs_imported} jobs from Education Gazette! Refreshing...`;
+                    progressText.textContent = `✅ Imported ${data.jobs_imported} jobs! AI analyzing and auto-applying... Refreshing...`;
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
                     alert('Error: ' + (data.error || 'Upload failed'));

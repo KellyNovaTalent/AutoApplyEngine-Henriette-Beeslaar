@@ -102,24 +102,22 @@ A fully automated job application system that searches for teaching jobs daily, 
    }
    ```
 
-2. **Automated Job Discovery (3 Methods):**
+2. **Automated Job Discovery (2 Methods):**
    
-   **A. LinkedIn + Seek (Automated):**
-   - Click "🔍 Auto Search Jobs" button
-   - System searches LinkedIn + Seek via Apify
-   - AI analyzes and auto-applies to 70%+ matches
+   **A. CSV Upload (RECOMMENDED - Works Best):**
+   - Run your local scrapers on your computer:
+     - `run_seek_last7.py` → Seek NZ jobs with emails (last 7 days)
+     - Education Gazette scraper → School jobs with emails
+   - Click "📤 Upload Job CSV" button
+   - Upload ANY CSV file (system auto-detects format!)
+   - System imports jobs with **contact email addresses**
+   - **High auto-email success rate** with extracted emails!
    
-   **B. Education Gazette (Direct Scrape - may be blocked):**
-   - Click "📰 Search Education Gazette" button
+   **B. Education Gazette (Direct Scrape - Backup):**
+   - Click "📰 Try Education Gazette Scrape" button
    - Attempts to scrape gazette.education.govt.nz
-   - Note: May be blocked by anti-bot protection
-   
-   **C. Education Gazette (CSV Upload - RECOMMENDED):**
-   - Run your local scraper (proven to work on your computer)
-   - Click "📤 Upload Gazette CSV" button
-   - Upload the generated CSV file
-   - System imports jobs with **school email addresses**
-   - **~100% auto-email success rate** for Gazette jobs!
+   - Note: Often blocked by anti-bot protection
+   - Falls back to CSV upload if blocked
 
 3. **Smart Application Handling:**
    - AI generates personalized cover letter (saved as PDF)

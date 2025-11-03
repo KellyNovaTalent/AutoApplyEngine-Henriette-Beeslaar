@@ -428,12 +428,15 @@ def scrape_gazette_endpoint():
 @login_required
 def upload_gazette_csv():
     """
-    Upload Education Gazette jobs from CSV (scraped locally).
-    Expected CSV columns: Title, Employer, Employment Type, Closing, Link, Description, Contact, Email, Phone
+    Universal CSV Upload - accepts Education Gazette OR Seek scraper formats.
+    Auto-detects format and imports accordingly.
+    
+    Gazette format: Title, Employer, Description, Email, Link, Closing
+    Seek format: Hiring Company, Position, Application Link, Email, Phone, Description
     """
     try:
         print(f"\n{'='*80}")
-        print(f"📤 EDUCATION GAZETTE CSV UPLOAD")
+        print(f"📤 UNIVERSAL CSV UPLOAD")
         print(f"{'='*80}")
         
         if 'file' not in request.files:
@@ -450,22 +453,48 @@ def upload_gazette_csv():
         csv_content = file.read().decode('utf-8')
         csv_reader = csv.DictReader(StringIO(csv_content))
         
+        rows = list(csv_reader)
+        if not rows:
+            return jsonify({'success': False, 'error': 'CSV file is empty'})
+        
+        first_row = rows[0]
+        is_seek_format = 'Hiring Company' in first_row and 'Position' in first_row
+        is_gazette_format = 'Title' in first_row and 'Employer' in first_row
+        
+        if is_seek_format:
+            print("   📋 Detected: Seek CSV format")
+            source_platform = 'Seek NZ (CSV Upload)'
+        elif is_gazette_format:
+            print("   📋 Detected: Education Gazette CSV format")
+            source_platform = 'Education Gazette NZ (CSV Upload)'
+        else:
+            return jsonify({'success': False, 'error': 'Unrecognized CSV format. Expected Education Gazette or Seek format.'})
+        
         jobs_imported = 0
         jobs_skipped = 0
         
-        for row in csv_reader:
+        for row in rows:
             try:
-                job_title = row.get('Title', '')
-                company_name = row.get('Employer', 'NZ School')
-                job_url = row.get('Link', '')
-                description = row.get('Description', '')
-                contact_email = row.get('Email', None)
+                if is_seek_format:
+                    job_title = row.get('Position', '')
+                    company_name = row.get('Hiring Company', '')
+                    job_url = row.get('Application Link', '')
+                    description = row.get('Description', '')
+                    contact_email = row.get('Email', None)
+                    phone = row.get('Phone', '')
+                else:
+                    job_title = row.get('Title', '')
+                    company_name = row.get('Employer', 'NZ School')
+                    job_url = row.get('Link', '')
+                    description = row.get('Description', '')
+                    contact_email = row.get('Email', None)
+                    phone = ''
                 
                 if not job_title or not job_url:
                     jobs_skipped += 1
                     continue
                 
-                if contact_email == 'N/A':
+                if contact_email == 'N/A' or not contact_email:
                     contact_email = None
                 
                 job_data = {
@@ -474,8 +503,8 @@ def upload_gazette_csv():
                     'location': extract_location_from_description(description),
                     'job_url': job_url,
                     'description': description[:2000],
-                    'posted_date': row.get('Closing', ''),
-                    'source_platform': 'Education Gazette NZ (CSV Upload)',
+                    'posted_date': row.get('Closing', row.get('Posted', '')),
+                    'source_platform': source_platform,
                     'salary_info': None,
                     'contact_email': contact_email
                 }
