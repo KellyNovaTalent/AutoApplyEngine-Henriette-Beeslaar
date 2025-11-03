@@ -119,6 +119,31 @@
                             {% endif %}
                         </div>
                         
+                        {% if job.match_score > 0 %}
+                        <div class="mb-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                {% if job.match_score >= 70 %}
+                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-green-100 text-green-800">
+                                    🎯 {{ job.match_score }}% Match - EXCELLENT
+                                </span>
+                                {% elif job.match_score >= 50 %}
+                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-yellow-100 text-yellow-800">
+                                    🎯 {{ job.match_score }}% Match - GOOD
+                                </span>
+                                {% else %}
+                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-gray-100 text-gray-800">
+                                    🎯 {{ job.match_score }}% Match
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if job.ai_analysis %}
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mt-2">
+                                <p class="text-blue-900 text-sm"><strong>AI Analysis:</strong> {{ job.ai_analysis }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
                         {% if job.description %}
                         <p class="text-gray-700 text-sm mb-3">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
                         {% endif %}
@@ -131,9 +156,6 @@
                         
                         <div class="flex items-center gap-4 text-sm text-gray-500">
                             <span>📅 {{ job.date_received[:10] }}</span>
-                            {% if job.match_score > 0 %}
-                            <span>🎯 Match: {{ job.match_score }}%</span>
-                            {% endif %}
                         </div>
                     </div>
                     

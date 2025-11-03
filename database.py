@@ -25,12 +25,18 @@ def init_db():
             status TEXT DEFAULT 'new',
             rejection_reason TEXT,
             match_score INTEGER DEFAULT 0,
+            ai_analysis TEXT,
             application_date TIMESTAMP,
             notes TEXT,
             email_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    
+    cursor.execute("PRAGMA table_info(jobs)")
+    columns = [column[1] for column in cursor.fetchall()]
+    if 'ai_analysis' not in columns:
+        cursor.execute('ALTER TABLE jobs ADD COLUMN ai_analysis TEXT')
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS email_tracking (
@@ -95,8 +101,8 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
         INSERT INTO jobs (
             job_title, company_name, location, description, job_url,
             posted_date, source_platform, salary_info, status, 
-            rejection_reason, email_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            rejection_reason, match_score, ai_analysis, email_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         job_data.get('job_title'),
         job_data.get('company_name'),
@@ -108,6 +114,8 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
         job_data.get('salary_info'),
         job_data.get('status', 'new'),
         job_data.get('rejection_reason'),
+        job_data.get('match_score', 0),
+        job_data.get('ai_analysis'),
         job_data.get('email_id')
     ))
     

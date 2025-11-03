@@ -7,6 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from email_parser import parse_job_alert_email
 from database import insert_job, email_processed, mark_email_processed
+from ai_matcher import analyze_job_match, should_analyze_job
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 TOKEN_PATH = 'token.json'
@@ -137,6 +138,12 @@ def process_job_emails():
             )
             
             for job in jobs:
+                if should_analyze_job(job):
+                    print(f"  🤖 Analyzing with AI: {job['job_title']}")
+                    ai_result = analyze_job_match(job)
+                    job['match_score'] = ai_result['match_score']
+                    job['ai_analysis'] = ai_result['analysis']
+                
                 job_id = insert_job(job)
                 if job_id:
                     total_jobs += 1
@@ -144,7 +151,8 @@ def process_job_emails():
                         auto_rejected += 1
                         print(f"  ❌ Auto-rejected: {job['job_title']} - {job['rejection_reason']}")
                     else:
-                        print(f"  ✅ Added: {job['job_title']} at {job['company_name']}")
+                        score = job.get('match_score', 0)
+                        print(f"  ✅ Added: {job['job_title']} at {job['company_name']} (Match: {score}%)")
             
             mark_email_processed(email['id'])
         
