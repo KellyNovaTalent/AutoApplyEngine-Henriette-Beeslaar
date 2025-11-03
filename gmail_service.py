@@ -90,6 +90,54 @@ def get_email_headers(headers: List[Dict]) -> Dict[str, str]:
             header_dict[name] = header['value']
     return header_dict
 
+def test_gmail_connection(service):
+    """Test basic Gmail API connectivity and show what emails exist."""
+    print("\n" + "="*80)
+    print("🔍 GMAIL API CONNECTION TEST")
+    print("="*80)
+    
+    try:
+        # Test 1: Get total inbox count
+        print("\n1️⃣ Testing basic Gmail API access...")
+        results = service.users().messages().list(userId='me', maxResults=1).execute()
+        print(f"✅ Gmail API is working! Connection successful.")
+        
+        # Test 2: Show last 20 emails from inbox
+        print("\n2️⃣ Fetching last 20 emails from inbox...")
+        results = service.users().messages().list(userId='me', maxResults=20).execute()
+        messages = results.get('messages', [])
+        print(f"📬 Found {len(messages)} recent emails in inbox")
+        
+        if messages:
+            print("\n📧 Recent emails:")
+            for i, msg in enumerate(messages[:10], 1):
+                full_msg = service.users().messages().get(userId='me', id=msg['id'], format='metadata', metadataHeaders=['From', 'Subject', 'Date']).execute()
+                headers = {h['name']: h['value'] for h in full_msg['payload']['headers']}
+                print(f"\n   {i}. From: {headers.get('From', 'Unknown')[:60]}")
+                print(f"      Subject: {headers.get('Subject', 'No subject')[:60]}")
+                print(f"      Date: {headers.get('Date', 'Unknown')[:40]}")
+        
+        # Test 3: Search for ANY job-related emails
+        print("\n3️⃣ Searching for job-related keywords...")
+        test_queries = [
+            'subject:job',
+            'subject:teacher',
+            'subject:vacancy',
+            'subject:LinkedIn',
+            'subject:SEEK'
+        ]
+        
+        for query in test_queries:
+            results = service.users().messages().list(userId='me', q=query, maxResults=5).execute()
+            count = len(results.get('messages', []))
+            print(f"   '{query}' → Found {count} emails")
+        
+        print("\n" + "="*80)
+        
+    except Exception as e:
+        print(f"❌ Gmail API Error: {e}")
+        raise
+
 def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30) -> List[Dict[str, Any]]:
     """
     Fetch job alert emails with FLEXIBLE detection from the last X days.
@@ -97,32 +145,32 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
     """
     from datetime import datetime, timedelta
     
+    # Run connection test first
+    test_gmail_connection(service)
+    
     # Calculate date filter (last 30 days)
     date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
     
-    # BROAD queries to catch emails across all tabs - search by subject/content, not sender
+    print("\n" + "="*80)
+    print("🔎 SEARCHING FOR JOB EMAILS")
+    print("="*80)
+    print(f"Date filter: After {date_filter} (last {days_back} days)")
+    
+    # SIMPLIFIED queries - just search for keywords
     queries = [
-        # LinkedIn - search by subject line patterns (handles bounce domains)
-        f'in:anywhere subject:"LinkedIn Job" after:{date_filter}',
-        f'in:anywhere subject:"jobs you may be interested" after:{date_filter}',
-        f'in:anywhere (subject:linkedin body:"linkedin.com/jobs") after:{date_filter}',
-        
-        # Seek NZ - search by subject patterns (handles marketing senders)
-        f'in:anywhere subject:"SEEK" after:{date_filter}',
-        f'in:anywhere (subject:seek body:"seek.co.nz/job") after:{date_filter}',
-        
-        # Education Gazette - flexible search
-        f'in:anywhere (from:govt.nz subject:gazette) after:{date_filter}',
-        f'in:anywhere (from:education.govt.nz OR from:edgazette.govt.nz) after:{date_filter}',
-        f'in:anywhere body:"gazette.education.govt.nz" after:{date_filter}',
+        f'subject:"LinkedIn Job" after:{date_filter}',
+        f'subject:SEEK after:{date_filter}',
+        f'from:education.govt.nz after:{date_filter}',
+        f'subject:job after:{date_filter}',
+        f'subject:teacher after:{date_filter}',
     ]
     
     all_emails = []
     seen_ids = set()
     
-    for query in queries:
+    for i, query in enumerate(queries, 1):
         try:
-            print(f"🔍 Searching: {query[:80]}...")
+            print(f"\n{i}. Query: {query}")
             results = service.users().messages().list(
                 userId='me',
                 q=query,
@@ -130,7 +178,7 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
             ).execute()
             
             messages = results.get('messages', [])
-            print(f"  → Found {len(messages)} emails")
+            print(f"   ✅ Found: {len(messages)} emails")
             
             for message in messages:
                 msg_id = message['id']
