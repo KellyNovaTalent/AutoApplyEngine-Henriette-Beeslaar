@@ -108,7 +108,7 @@ def send_application(application: Dict) -> bool:
     Send the job application via Gmail API.
     
     Returns:
-        True if sent successfully, False otherwise
+        True if sent successfully, False if email missing or send failed
     """
     if not AUTO_APPLY_ENABLED:
         print(f"   ⏸️  Auto-apply disabled - application prepared but not sent")
@@ -116,9 +116,10 @@ def send_application(application: Dict) -> bool:
     
     recipient = application.get('recipient_email')
     if not recipient:
-        print(f"   ⚠️  No recipient email found in job description")
-        print(f"   💡 Manual application required via job URL")
-        # Still mark as "ready_to_apply" so user can send manually
+        print(f"   ⚠️  No contact email found in job description")
+        print(f"   📋 Cover letter generated - manual application required via job portal")
+        print(f"   🔗 Apply manually at: {application.get('job_url', 'N/A')}")
+        # Application is prepared but requires manual sending
         return False
     
     # Send via Gmail API
@@ -156,13 +157,15 @@ def auto_apply_to_job(job_data: dict) -> Dict:
                 update_job_status(
                     job_data['id'],
                     'applied',
-                    f"Auto-applied on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                    f"✅ Auto-sent via Gmail on {datetime.now().strftime('%Y-%m-%d %H:%M')}"
                 )
             else:
+                # Application prepared but needs manual sending through job portal
+                job_url = job_data.get('job_url', 'No URL')
                 update_job_status(
                     job_data['id'],
                     'ready_to_apply',
-                    f"Application prepared - manual send required"
+                    f"📋 Cover letter ready! Apply manually at job portal: {job_url}"
                 )
         
         return {

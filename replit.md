@@ -27,11 +27,12 @@ A fully automated job application system that searches for teaching jobs daily, 
 - Professional NZ business letter format
 - Highlights relevant special needs experience
 
-**📧 Auto-Apply System:**
+**📧 Smart Application System:**
 - Automatically prepares applications for 70%+ matches
-- Includes CV + tailored cover letter
-- Email-ready application packages
-- Tracks application status
+- Includes CV + tailored cover letter (saved as PDFs)
+- Sends via Gmail when contact email available
+- Otherwise marks "ready_to_apply" with cover letter attached
+- Tracks application status (applied/ready/pending)
 
 **📊 Smart Dashboard:**
 - Color-coded job cards (green/yellow/gray)
@@ -48,29 +49,41 @@ A fully automated job application system that searches for teaching jobs daily, 
 ## Tech Stack
 - **Backend**: Python 3.11, Flask
 - **Database**: SQLite
-- **Email**: Gmail API
+- **Email**: Gmail API (automated sending)
 - **AI**: Claude 3.5 Sonnet (Anthropic API)
+- **Job Search**: Apify API (LinkedIn + Seek scrapers)
 - **Frontend**: HTML, Tailwind CSS
-- **Scheduler**: APScheduler (30-minute intervals)
+- **Scheduler**: APScheduler (3-hour auto-search intervals)
+- **PDF Generation**: fpdf2 (cover letters)
 
 ## Project Structure
 ```
-├── app.py                      # Flask application with URL analysis endpoint
-├── database.py                 # SQLite database operations with match scores
-├── job_fetcher.py              # Web scraper for LinkedIn, Seek, Education Gazette
-├── ai_matcher.py               # Claude AI job matching and scoring
-├── cv_profile.py               # User CV profile and job preferences
+├── app.py                      # Flask app with auto-search endpoint + scheduler
+├── database.py                 # SQLite database operations
+├── job_fetcher_apify.py        # Apify API integration (LinkedIn + Seek)
+├── ai_matcher.py               # Claude AI job matching (0-100% scores)
+├── cover_letter_generator.py  # AI-powered cover letter generation
+├── cover_letter_pdf.py         # PDF generation with Unicode handling
+├── auto_apply.py               # Auto-application system (70%+ matches)
+├── email_sender.py             # Gmail API email sending
+├── gmail_service.py            # Gmail OAuth authentication
+├── job_search_config.py        # User search configuration
+├── apify_cost_tracker.py       # Daily usage limits (10 searches, 500 jobs)
+├── cv_profile.py               # User CV profile (Henriëtte Beeslaar)
 ├── templates/
 │   ├── login.html             # Login page
-│   └── index.html             # URL paste interface + results dashboard
+│   └── index.html             # JobCopilot dashboard with auto-search
 ├── requirements.txt            # Python dependencies
-└── jobs.db                    # SQLite database (created at runtime)
+├── cover_letters/             # Generated cover letter PDFs
+└── jobs.db                    # SQLite database (auto-created)
 ```
 
 ## Required Secrets (in Replit Secrets)
 1. **SECRET_KEY**: Flask session security key
-2. **AUTH_PASSWORD**: Dashboard login password
-3. **ANTHROPIC_API_KEY**: Claude AI API key for job matching
+2. **AUTH_PASSWORD**: Dashboard login password  
+3. **ANTHROPIC_API_KEY**: Claude AI API key for job matching and cover letters
+4. **APIFY_API_KEY**: Apify API key for LinkedIn + Seek job scraping
+5. **Gmail Integration**: Configured via Replit Connectors (OAuth)
 
 ## How It Works (Fully Automated)
 
@@ -94,11 +107,12 @@ A fully automated job application system that searches for teaching jobs daily, 
    - Calculates 0-100% match scores
    - **AUTOMATICALLY** prepares applications for 70%+ matches
 
-3. **Applications Get Sent:**
-   - AI generates personalized cover letter
+3. **Smart Application Handling:**
+   - AI generates personalized cover letter (saved as PDF)
    - Packages CV + cover letter
-   - Prepares email-ready application
-   - Updates job status to "ready_to_apply" or "applied"
+   - **IF** contact email found: Sends application via Gmail → Status: "applied"
+   - **IF** no email: Saves application docs → Status: "ready_to_apply" 
+   - User applies manually at job portal with AI-generated materials
 
 4. **Review Dashboard:**
    - See all found jobs with match scores
