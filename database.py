@@ -101,10 +101,13 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
     conn = get_connection()
     cursor = conn.cursor()
     
-    ai_analysis = job_data.get('ai_analysis')
-    if isinstance(ai_analysis, dict):
-        import json
-        ai_analysis = json.dumps(ai_analysis)
+    import json
+    
+    def serialize_field(value):
+        """Convert dict/list to JSON string, leave other types as-is."""
+        if isinstance(value, (dict, list)):
+            return json.dumps(value)
+        return value
     
     cursor.execute('''
         INSERT INTO jobs (
@@ -113,19 +116,19 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
             rejection_reason, match_score, ai_analysis, email_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
-        job_data.get('job_title'),
-        job_data.get('company_name'),
-        job_data.get('location'),
-        job_data.get('description'),
-        job_data.get('job_url'),
-        job_data.get('posted_date'),
-        job_data.get('source_platform'),
-        job_data.get('salary_info'),
-        job_data.get('status', 'new'),
-        job_data.get('rejection_reason'),
+        serialize_field(job_data.get('job_title')),
+        serialize_field(job_data.get('company_name')),
+        serialize_field(job_data.get('location')),
+        serialize_field(job_data.get('description')),
+        serialize_field(job_data.get('job_url')),
+        serialize_field(job_data.get('posted_date')),
+        serialize_field(job_data.get('source_platform')),
+        serialize_field(job_data.get('salary_info')),
+        serialize_field(job_data.get('status', 'new')),
+        serialize_field(job_data.get('rejection_reason')),
         job_data.get('match_score', 0),
-        ai_analysis,
-        job_data.get('email_id')
+        serialize_field(job_data.get('ai_analysis')),
+        serialize_field(job_data.get('email_id'))
     ))
     
     job_id = cursor.lastrowid

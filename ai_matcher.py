@@ -59,7 +59,7 @@ SCORE: [number 0-100]
 ANALYSIS: [your 2-3 sentence analysis]"""
 
         message = client.messages.create(
-            model="claude-3-5-sonnet-20240620",
+            model="claude-3-5-sonnet-latest",
             max_tokens=300,
             temperature=0.3,
             messages=[{
