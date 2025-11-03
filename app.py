@@ -73,17 +73,21 @@ def sync_emails():
         return jsonify(result)
     except Exception as e:
         error_msg = str(e)
+        print(f"Sync error: {error_msg}")
         if 'AUTHORIZATION_REQUIRED|||' in error_msg:
-            auth_url = error_msg.split('|||')[1]
-            return jsonify({
-                'success': False,
-                'error': 'authorization_required',
-                'auth_url': auth_url
-            })
+            parts = error_msg.split('|||')
+            if len(parts) == 2:
+                auth_url = parts[1]
+                print(f"Returning auth_url: {auth_url}")
+                return jsonify({
+                    'success': False,
+                    'error': 'authorization_required',
+                    'auth_url': auth_url
+                }), 200
         return jsonify({
             'success': False,
             'error': error_msg
-        })
+        }), 500
 
 @app.route('/api/auth/complete', methods=['POST'])
 @login_required
