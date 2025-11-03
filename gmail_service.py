@@ -13,32 +13,23 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 TOKEN_PATH = 'token.json'
 CREDENTIALS_PATH = 'credentials.json'
 
-_flow_instance = None
-
-def get_auth_url():
-    """Get the authorization URL for Gmail OAuth."""
-    global _flow_instance
-    if not os.path.exists(CREDENTIALS_PATH):
-        return None
-    
-    _flow_instance = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-    _flow_instance.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
-    auth_url, _ = _flow_instance.authorization_url(prompt='consent')
-    return auth_url
-
-def complete_auth(auth_code):
+def complete_auth_with_code(auth_code):
     """Complete the OAuth flow with the authorization code."""
-    global _flow_instance
-    if not _flow_instance:
-        raise Exception("Auth flow not started. Please try syncing again.")
+    if not os.path.exists(CREDENTIALS_PATH):
+        raise Exception("Credentials file not found")
     
-    _flow_instance.fetch_token(code=auth_code)
-    creds = _flow_instance.credentials
+    # Create a new flow instance
+    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+    flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
     
+    # Fetch the token using the authorization code
+    flow.fetch_token(code=auth_code)
+    creds = flow.credentials
+    
+    # Save credentials
     with open(TOKEN_PATH, 'w') as token:
         token.write(creds.to_json())
     
-    _flow_instance = None
     return True
 
 def get_gmail_service():

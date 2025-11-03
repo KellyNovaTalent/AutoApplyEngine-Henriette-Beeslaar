@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, get_all_jobs, get_job_stats, update_job_status
-from gmail_service import process_job_emails, get_auth_url, complete_auth
+from gmail_service import process_job_emails, complete_auth_with_code
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,10 +94,13 @@ def complete_authorization():
         return jsonify({'success': False, 'error': 'No authorization code provided'})
     
     try:
-        complete_auth(auth_code)
+        print(f"Completing authorization with code: {auth_code[:20]}...")
+        complete_auth_with_code(auth_code)
+        print("Authorization successful, processing emails...")
         result = process_job_emails()
         return jsonify(result)
     except Exception as e:
+        print(f"Authorization error: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/jobs/<int:job_id>/update', methods=['POST'])
