@@ -9,6 +9,7 @@ A fully automated job application system that searches for teaching jobs daily, 
 
 **🔍 Automated Job Discovery:**
 - Searches LinkedIn + Seek NZ every few hours automatically
+- Education Gazette NZ scraper ready (currently blocked by anti-bot protection)
 - Uses professional Apify scrapers (not basic web scraping)
 - Configurable keywords, location filters, excluded terms
 - Cost controls: 10 searches/day, 500 jobs/day max
@@ -61,6 +62,7 @@ A fully automated job application system that searches for teaching jobs daily, 
 ├── app.py                      # Flask app with auto-search endpoint + scheduler
 ├── database.py                 # SQLite database operations
 ├── job_fetcher_apify.py        # Apify API integration (LinkedIn + Seek)
+├── job_fetcher_gazette.py      # Education Gazette NZ scraper (ready for use)
 ├── ai_matcher.py               # Claude AI job matching (0-100% scores)
 ├── cover_letter_generator.py  # AI-powered cover letter generation
 ├── cover_letter_pdf.py         # PDF generation with Unicode handling
@@ -149,6 +151,8 @@ Claude AI analyzes each job based on:
 - **Languages**: English and Afrikaans
 
 ## Recent Changes
+- Nov 3, 2025: Built Education Gazette NZ scraper (job_fetcher_gazette.py) based on user's proven scraper patterns - Currently on standby due to website anti-bot protection from Replit environment
+- Nov 3, 2025: Made system fault-tolerant - Education Gazette failures don't break LinkedIn + Seek search
 - Nov 3, 2025: Updated job search keywords - Focus ONLY on Foundation Phase (Grades R-3) and Junior Primary positions
 - Nov 3, 2025: **COMPLETE AUTOMATION** - Full JobCopilot clone implemented
 - Nov 3, 2025: Built cover_letter_generator.py - AI writes personalized cover letters

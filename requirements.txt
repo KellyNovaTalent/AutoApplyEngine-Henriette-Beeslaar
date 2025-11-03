@@ -12,3 +12,6 @@ requests
 apify-client
 requests
 fpdf2
+fpdf
+playwright
+PyMuPDF

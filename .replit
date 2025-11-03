@@ -5,6 +5,7 @@ integrations = ["google-mail:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["freetype", "gitFull", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "openjpeg", "playwright-driver", "swig", "xcbuild"]
 
 [workflows]
 runButton = "Project"
@@ -33,3 +34,7 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 43229
+externalPort = 3000

@@ -226,48 +226,33 @@ def auto_search_jobs():
         else:
             return jsonify({'success': False, 'error': 'No platforms configured'})
         
-        # SEARCH EDUCATION GAZETTE NZ FIRST (official government job board)
-        print(f"\n📰 Searching Education Gazette NZ (Official Government Job Board)...")
-        gazette_jobs = search_education_gazette(max_jobs=20)
-        print(f"   Found {len(gazette_jobs)} Foundation Phase jobs from Education Gazette")
+        # OPTIONAL: Search Education Gazette if enabled
+        if 'education_gazette' in platforms_to_search:
+            print(f"\n📰 Searching Education Gazette NZ...")
+            try:
+                gazette_jobs = search_education_gazette(max_jobs=20)
+                for job_data in gazette_jobs:
+                    job_text = f"{job_data['job_title']} {job_data['description']}".lower()
+                    if any(excluded in job_text for excluded in EXCLUDED_KEYWORDS):
+                        continue
+                    
+                    ai_result = analyze_job_match(job_data)
+                    job_data['match_score'] = ai_result['match_score']
+                    job_data['ai_analysis'] = ai_result['analysis']
+                    job_data['status'] = 'new'
+                    
+                    job_id = insert_job(job_data)
+                    if job_id:
+                        job_data['id'] = job_id
+                        total_new_jobs += 1
+                        all_jobs_found.append(job_data)
+                        
+                        if should_auto_apply(job_data):
+                            auto_apply_to_job(job_data)
+            except Exception as e:
+                print(f"   ⚠️  Education Gazette unavailable: {e}")
         
-        # Process Education Gazette jobs
-        for job_data in gazette_jobs:
-            # Filter out excluded keywords
-            job_text = f"{job_data['job_title']} {job_data['description']}".lower()
-            if any(excluded in job_text for excluded in EXCLUDED_KEYWORDS):
-                print(f"   ⏭️  Skipped: {job_data['job_title']} (contains excluded keyword)")
-                continue
-            
-            # Analyze with AI
-            print(f"   🤖 Analyzing: {job_data['job_title']}")
-            ai_result = analyze_job_match(job_data)
-            job_data['match_score'] = ai_result['match_score']
-            job_data['ai_analysis'] = ai_result['analysis']
-            job_data['status'] = 'new'
-            
-            print(f"   ✨ Match Score: {ai_result['match_score']}%")
-            if job_data.get('contact_email'):
-                print(f"   📧 Email: {job_data['contact_email']}")
-            
-            # Insert into database
-            job_id = insert_job(job_data)
-            if job_id:
-                job_data['id'] = job_id
-                total_new_jobs += 1
-                all_jobs_found.append(job_data)
-                print(f"   💾 Saved (ID: {job_id})")
-                
-                # Auto-apply if match score is high enough
-                if should_auto_apply(job_data):
-                    print(f"   🎯 Match score {job_data['match_score']}% - attempting auto-apply")
-                    apply_result = auto_apply_to_job(job_data)
-                    if apply_result['success']:
-                        print(f"   ✅ Application prepared")
-                    else:
-                        print(f"   ⏭️  Auto-apply skipped: {apply_result.get('reason', 'Unknown')}")
-        
-        # SEARCH LINKEDIN + SEEK (via Apify)
+        # SEARCH LINKEDIN + SEEK (via Apify) - Main job sources
         for keyword in USER_SEARCH_CONFIG['keywords']:
             print(f"\n🔎 Searching LinkedIn/Seek for: {keyword}")
             

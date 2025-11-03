@@ -28,7 +28,7 @@ USER_SEARCH_CONFIG = {
     ],
     'location': 'New Zealand',
     'max_jobs_per_search': 10,  # Start small for testing
-    'platforms': ['linkedin', 'seek', 'education_gazette'],  # Added Education Gazette!  
+    'platforms': ['linkedin', 'seek'],  # Education Gazette ready but currently blocked by anti-bot protection  
     'remote_ok': False,
     'salary_min': None,
     'auto_apply_enabled': True,  
