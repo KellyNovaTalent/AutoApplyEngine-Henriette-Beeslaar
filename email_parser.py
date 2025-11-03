@@ -43,22 +43,36 @@ def parse_linkedin_email(email_body: str, email_id: str) -> List[Dict[str, Any]]
     jobs = []
     soup = BeautifulSoup(email_body, 'html.parser')
     
-    job_sections = soup.find_all('a', href=re.compile(r'linkedin\.com/jobs/view'))
+    # Find ALL links with linkedin.com/jobs URLs
+    job_links = soup.find_all('a', href=re.compile(r'linkedin\.com/jobs/view/\d+'))
     
-    if not job_sections:
-        job_sections = soup.find_all('td', class_=re.compile(r'job|listing'))
-    
-    if not job_sections:
-        text = soup.get_text()
-        urls = re.findall(r'https?://(?:www\.)?linkedin\.com/jobs/view/\d+', text)
-        
-        for url in urls:
-            title_match = re.search(r'([^\n]+)\s+(?:at|@)\s+([^\n]+)', text)
+    if job_links:
+        for link in job_links:
+            url = link.get('href', '').split('?')[0]  # Remove tracking params
+            if not url:
+                continue
+                
+            job_title = clean_text(link.get_text()) or 'LinkedIn Job'
+            
+            # Try to find company and location from parent elements
+            parent = link.find_parent(['tr', 'td', 'div', 'table'])
+            company_name = 'Unknown'
+            location = ''
+            
+            if parent:
+                text_lines = [clean_text(line) for line in parent.get_text().split('\n') if clean_text(line)]
+                # Company is usually after the job title
+                for i, line in enumerate(text_lines):
+                    if job_title in line and i + 1 < len(text_lines):
+                        company_name = text_lines[i + 1]
+                        if i + 2 < len(text_lines):
+                            location = text_lines[i + 2]
+                        break
             
             job_data = {
-                'job_title': title_match.group(1).strip() if title_match else 'LinkedIn Job',
-                'company_name': title_match.group(2).strip() if title_match else 'Unknown',
-                'location': '',
+                'job_title': job_title,
+                'company_name': company_name,
+                'location': location,
                 'description': '',
                 'job_url': url,
                 'posted_date': datetime.now().strftime('%Y-%m-%d'),
@@ -76,115 +90,125 @@ def parse_linkedin_email(email_body: str, email_id: str) -> List[Dict[str, Any]]
             
             jobs.append(job_data)
     else:
-        for section in job_sections:
-            try:
-                if section.name == 'a':
-                    url = section.get('href', '')
-                    if 'linkedin.com/jobs/view' not in url:
-                        continue
-                    
-                    job_title = clean_text(section.get_text())
-                    
-                    parent = section.find_parent(['tr', 'td', 'div'])
-                    company_name = 'Unknown'
-                    location = ''
-                    
-                    if parent:
-                        text_content = parent.get_text()
-                        lines = [line.strip() for line in text_content.split('\n') if line.strip()]
-                        if len(lines) > 1:
-                            company_name = lines[1] if len(lines) > 1 else 'Unknown'
-                        if len(lines) > 2:
-                            location = lines[2]
-                    
-                    job_data = {
-                        'job_title': job_title or 'LinkedIn Job',
-                        'company_name': company_name,
-                        'location': location,
-                        'description': '',
-                        'job_url': url.split('?')[0],
-                        'posted_date': datetime.now().strftime('%Y-%m-%d'),
-                        'source_platform': 'LinkedIn',
-                        'salary_info': None,
-                        'email_id': email_id,
-                        'status': 'new',
-                        'rejection_reason': None
-                    }
-                    
-                    should_reject, reason = should_auto_reject(job_data['job_title'])
-                    if should_reject:
-                        job_data['status'] = 'auto-rejected'
-                        job_data['rejection_reason'] = reason
-                    
-                    jobs.append(job_data)
-                    
-            except Exception as e:
-                print(f"Error parsing LinkedIn job section: {e}")
-                continue
+        # Fallback: find URLs in text
+        text = soup.get_text()
+        urls = re.findall(r'https?://(?:www\.)?linkedin\.com/jobs/view/\d+', text)
+        
+        for url in urls:
+            job_data = {
+                'job_title': 'LinkedIn Job',
+                'company_name': 'Unknown',
+                'location': '',
+                'description': '',
+                'job_url': url,
+                'posted_date': datetime.now().strftime('%Y-%m-%d'),
+                'source_platform': 'LinkedIn',
+                'salary_info': None,
+                'email_id': email_id,
+                'status': 'new',
+                'rejection_reason': None
+            }
+            
+            should_reject, reason = should_auto_reject(job_data['job_title'])
+            if should_reject:
+                job_data['status'] = 'auto-rejected'
+                job_data['rejection_reason'] = reason
+            
+            jobs.append(job_data)
     
     return jobs
 
 def parse_seek_email(email_body: str, email_id: str) -> List[Dict[str, Any]]:
     """
     Parse Seek NZ job alert email and extract job details.
-    Seek usually sends individual job alerts.
+    Seek can send multiple job recommendations per email.
     """
     jobs = []
     soup = BeautifulSoup(email_body, 'html.parser')
     
-    job_title = 'Seek Job'
-    company_name = 'Unknown'
-    location = ''
-    description = ''
-    job_url = None
-    salary_info = None
+    # Find ALL Seek job links
+    job_links = soup.find_all('a', href=re.compile(r'seek\.co\.nz/job/\d+'))
     
-    links = soup.find_all('a', href=re.compile(r'seek\.co\.nz/job'))
-    if links:
-        job_url = links[0].get('href', '').split('?')[0]
-        job_title_elem = links[0]
-        job_title = clean_text(job_title_elem.get_text()) or 'Seek Job'
-    
-    text = soup.get_text()
-    
-    company_match = re.search(r'(?:at|@|Company:)\s*([^\n]+)', text, re.IGNORECASE)
-    if company_match:
-        company_name = clean_text(company_match.group(1))
-    
-    location_match = re.search(r'(?:Location:|in)\s*([^\n]+(?:NZ|New Zealand)[^\n]*)', text, re.IGNORECASE)
-    if location_match:
-        location = clean_text(location_match.group(1))
-    
-    salary_match = re.search(r'\$[\d,]+(?:\s*-\s*\$[\d,]+)?(?:\s*(?:per|pa|p\.a\.|year))?', text)
-    if salary_match:
-        salary_info = salary_match.group(0)
-    
-    paragraphs = soup.find_all('p')
-    if paragraphs:
-        description_parts = [clean_text(p.get_text()) for p in paragraphs[:3]]
-        description = ' '.join(description_parts)[:500]
-    
-    if job_url:
-        job_data = {
-            'job_title': job_title,
-            'company_name': company_name,
-            'location': location,
-            'description': description,
-            'job_url': job_url,
-            'posted_date': datetime.now().strftime('%Y-%m-%d'),
-            'source_platform': 'Seek NZ',
-            'salary_info': salary_info,
-            'email_id': email_id,
-            'status': 'new',
-            'rejection_reason': None
-        }
+    if job_links:
+        for link in job_links:
+            url = link.get('href', '').split('?')[0]  # Remove tracking params
+            if not url:
+                continue
+            
+            job_title = clean_text(link.get_text()) or 'Seek Job'
+            
+            # Try to find company and location from parent elements
+            parent = link.find_parent(['tr', 'td', 'div', 'table'])
+            company_name = 'Unknown'
+            location = ''
+            salary_info = None
+            
+            if parent:
+                text = parent.get_text()
+                
+                # Look for company name
+                company_match = re.search(r'(?:at|@|Company:)\s*([^\n]+)', text, re.IGNORECASE)
+                if company_match:
+                    company_name = clean_text(company_match.group(1))
+                
+                # Look for location
+                location_match = re.search(r'(?:Location:|in)\s*([^\n]+(?:NZ|New Zealand)[^\n]*)', text, re.IGNORECASE)
+                if location_match:
+                    location = clean_text(location_match.group(1))
+                
+                # Look for salary
+                salary_match = re.search(r'\$[\d,]+(?:\s*-\s*\$[\d,]+)?', text)
+                if salary_match:
+                    salary_info = salary_match.group(0)
+            
+            job_data = {
+                'job_title': job_title,
+                'company_name': company_name,
+                'location': location,
+                'description': '',
+                'job_url': url,
+                'posted_date': datetime.now().strftime('%Y-%m-%d'),
+                'source_platform': 'Seek NZ',
+                'salary_info': salary_info,
+                'email_id': email_id,
+                'status': 'new',
+                'rejection_reason': None
+            }
+            
+            should_reject, reason = should_auto_reject(job_data['job_title'])
+            if should_reject:
+                job_data['status'] = 'auto-rejected'
+                job_data['rejection_reason'] = reason
+            
+            jobs.append(job_data)
+    else:
+        # Fallback: search for Seek URLs in text
+        text = soup.get_text()
+        urls = re.findall(r'https?://(?:www\.)?seek\.co\.nz/job/\d+', text)
         
-        should_reject, reason = should_auto_reject(job_data['job_title'])
-        if should_reject:
-            job_data['status'] = 'auto-rejected'
-            job_data['rejection_reason'] = reason
-        
-        jobs.append(job_data)
+        for url in urls:
+            url = url.split('?')[0]
+            
+            job_data = {
+                'job_title': 'Seek Job',
+                'company_name': 'Unknown',
+                'location': '',
+                'description': '',
+                'job_url': url,
+                'posted_date': datetime.now().strftime('%Y-%m-%d'),
+                'source_platform': 'Seek NZ',
+                'salary_info': None,
+                'email_id': email_id,
+                'status': 'new',
+                'rejection_reason': None
+            }
+            
+            should_reject, reason = should_auto_reject(job_data['job_title'])
+            if should_reject:
+                job_data['status'] = 'auto-rejected'
+                job_data['rejection_reason'] = reason
+            
+            jobs.append(job_data)
     
     return jobs
 
@@ -196,15 +220,22 @@ def parse_education_gazette_email(email_body: str, email_id: str) -> List[Dict[s
     jobs = []
     soup = BeautifulSoup(email_body, 'html.parser')
     
-    # Find all links to gazette job postings
-    gazette_links = soup.find_all('a', href=re.compile(r'gazette\.education\.govt\.nz'))
+    # Find ALL links in email
+    all_links = soup.find_all('a', href=True)
     
-    if gazette_links:
-        # Multiple job listings in email
-        for link in gazette_links:
-            url = link.get('href', '')
-            if not url or 'unsubscribe' in url.lower() or 'subscription' in url.lower():
-                continue
+    for link in all_links:
+        url = link.get('href', '').strip()
+        
+        # Skip empty, unsubscribe, contact, about links
+        if not url:
+            continue
+        if any(skip in url.lower() for skip in ['unsubscribe', 'subscription', 'contact-us', '/about-', 'mailto:']):
+            continue
+        
+        # Only process gazette.education.govt.nz URLs that look like vacancies
+        if 'gazette.education.govt.nz' in url and ('vacancies' in url or 'jobs' in url or 'vacancy' in url):
+            # Clean URL - remove trailing brackets/periods
+            url = re.sub(r'[\]\)\.]+$', '', url)
             
             job_title = clean_text(link.get_text()) or 'Education Gazette Job'
             
@@ -237,43 +268,6 @@ def parse_education_gazette_email(email_body: str, email_id: str) -> List[Dict[s
                 'company_name': company_name,
                 'location': location,
                 'description': description,
-                'job_url': url.split('?')[0],
-                'posted_date': datetime.now().strftime('%Y-%m-%d'),
-                'source_platform': 'Education Gazette NZ',
-                'salary_info': None,
-                'email_id': email_id,
-                'status': 'new',
-                'rejection_reason': None
-            }
-            
-            should_reject, reason = should_auto_reject(job_data['job_title'])
-            if should_reject:
-                job_data['status'] = 'auto-rejected'
-                job_data['rejection_reason'] = reason
-            
-            jobs.append(job_data)
-    else:
-        # Fallback: search for gazette URLs in plain text
-        text = soup.get_text()
-        urls = re.findall(r'https?://(?:www\.)?gazette\.education\.govt\.nz/[^\s<>"]+', text)
-        
-        for url in urls:
-            if 'unsubscribe' in url.lower() or 'subscription' in url.lower():
-                continue
-            
-            # Try to extract job title from nearby text
-            url_index = text.find(url)
-            context = text[max(0, url_index - 200):url_index]
-            
-            # Look for job title patterns
-            title_match = re.search(r'([A-Z][^.\n]{10,80}(?:Teacher|Principal|Coordinator|Manager|Tutor|Lecturer))', context)
-            job_title = title_match.group(1).strip() if title_match else 'Education Gazette Job'
-            
-            job_data = {
-                'job_title': job_title,
-                'company_name': 'Unknown School',
-                'location': 'New Zealand',
-                'description': '',
                 'job_url': url.split('?')[0],
                 'posted_date': datetime.now().strftime('%Y-%m-%d'),
                 'source_platform': 'Education Gazette NZ',
