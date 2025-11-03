@@ -8,10 +8,10 @@ from typing import Dict, Optional
 from cover_letter_generator import generate_cover_letter, generate_email_subject, generate_email_body
 from cv_profile import USER_PROFILE
 from database import update_job_status
+from email_sender import send_job_application
 
-# For now, we'll prepare applications but not actually send them
-# In production, this would integrate with Gmail API or SMTP
-AUTO_APPLY_ENABLED = os.environ.get('AUTO_APPLY_ENABLED', 'false').lower() == 'true'
+# Auto-apply is now enabled by default with Gmail integration
+AUTO_APPLY_ENABLED = os.environ.get('AUTO_APPLY_ENABLED', 'true').lower() == 'true'
 MIN_MATCH_SCORE_FOR_AUTO_APPLY = 70
 
 
@@ -96,12 +96,7 @@ def extract_email_from_job(job_data: dict) -> Optional[str]:
 
 def send_application(application: Dict) -> bool:
     """
-    Send the job application via email.
-    
-    For now, this is a placeholder. In production, this would:
-    1. Use Gmail API to send email with CV attachment
-    2. Or integrate with email automation service
-    3. Or use SMTP directly
+    Send the job application via Gmail API.
     
     Returns:
         True if sent successfully, False otherwise
@@ -112,18 +107,18 @@ def send_application(application: Dict) -> bool:
     
     recipient = application.get('recipient_email')
     if not recipient:
-        print(f"   ⚠️  No recipient email found - cannot send application")
-        print(f"   💡 Manual application required via job URL: {application.get('job_url', 'N/A')}")
+        print(f"   ⚠️  No recipient email found in job description")
+        print(f"   💡 Manual application required via job URL")
+        # Still mark as "ready_to_apply" so user can send manually
         return False
     
-    print(f"   📧 Sending application to: {recipient}")
-    print(f"   📎 Subject: {application['email_subject']}")
-    
-    # TODO: Integrate Gmail API or SMTP here
-    # For now, we'll just log it
-    print(f"   ✅ Application prepared (email sending not yet implemented)")
-    
-    return False  # Change to True when email sending is implemented
+    # Send via Gmail API
+    try:
+        success = send_job_application(recipient, application)
+        return success
+    except Exception as e:
+        print(f"   ❌ Error sending application: {e}")
+        return False
 
 
 def auto_apply_to_job(job_data: dict) -> Dict:

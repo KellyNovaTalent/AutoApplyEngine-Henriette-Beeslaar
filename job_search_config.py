@@ -13,7 +13,7 @@ USER_SEARCH_CONFIG = {
         'SENCO'
     ],
     'location': 'New Zealand',
-    'max_jobs_per_search': 50,
+    'max_jobs_per_search': 10,  # Start small for testing
     'platforms': ['linkedin', 'seek'],  
     'remote_ok': False,
     'salary_min': None,
