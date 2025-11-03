@@ -4,13 +4,14 @@
 A fully automatic single-user job application monitoring system that connects to Gmail, parses job alerts from LinkedIn, Seek NZ, and Education Gazette NZ, auto-filters sponsorship jobs, **uses Claude AI to score job matches**, and provides a web dashboard with intelligent job recommendations.
 
 ## Features
-- **Gmail API Integration**: Monitors job alert emails from LinkedIn, Seek NZ, and Education Gazette NZ
+- **Gmail API Integration**: Reads ALL job alert emails from the last 30 days from LinkedIn, Seek NZ, and Education Gazette NZ
 - **AI-Powered Job Matching**: Claude 3.5 Sonnet analyzes ALL jobs (including those with sponsorship) and assigns match scores (0-100%) based on CV
 - **Multi-Source Support**: Handles LinkedIn, Seek NZ, and Education Gazette NZ job alerts with extensible parser system
 - **Web Dashboard**: Clean Tailwind CSS interface with color-coded match scores, AI analysis, filtering, and statistics
+- **Comprehensive Sync**: Fetches up to 100 emails per source from the last 30 days (not just new emails)
 - **Automatic Processing**: Background job runs every 30 minutes to check for new emails
 - **Single-User Authentication**: Secure password-protected access
-- **SQLite Database**: Stores all job data with AI analysis and match scores
+- **SQLite Database**: Stores all job data with AI analysis and match scores, handles duplicates automatically
 
 ## Tech Stack
 - **Backend**: Python 3.11, Flask
@@ -73,6 +74,7 @@ Claude AI analyzes each job based on:
 - **Languages**: English and Afrikaans
 
 ## Recent Changes
+- Nov 3, 2025: Updated to fetch ALL emails from last 30 days (up to 100 per source), not just new ones
 - Nov 3, 2025: Removed auto-rejection filter - all jobs now analyzed by AI (including sponsorship)
 - Nov 3, 2025: Added Education Gazette NZ email parser for teaching job alerts
 - Nov 3, 2025: Integrated Claude AI for automatic job matching

@@ -90,14 +90,20 @@ def get_email_headers(headers: List[Dict]) -> Dict[str, str]:
             header_dict[name] = header['value']
     return header_dict
 
-def fetch_job_alert_emails(service, max_results: int = 50) -> List[Dict[str, Any]]:
+def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30) -> List[Dict[str, Any]]:
     """
-    Fetch job alert emails from LinkedIn and Seek NZ.
+    Fetch job alert emails from LinkedIn, Seek NZ, and Education Gazette NZ from the last X days.
     Returns list of email data.
     """
+    from datetime import datetime, timedelta
+    
+    # Calculate date filter (last 30 days)
+    date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
+    
     queries = [
-        'from:linkedin.com OR from:jobs-listings@linkedin.com subject:(job alert OR recommended)',
-        'from:seek.co.nz subject:(job alert OR job recommendation)'
+        f'from:linkedin.com OR from:jobs-listings@linkedin.com subject:(job alert OR recommended) after:{date_filter}',
+        f'from:seek.co.nz subject:(job alert OR job recommendation) after:{date_filter}',
+        f'from:gazette.education.govt.nz after:{date_filter}'
     ]
     
     all_emails = []
@@ -111,13 +117,12 @@ def fetch_job_alert_emails(service, max_results: int = 50) -> List[Dict[str, Any
             ).execute()
             
             messages = results.get('messages', [])
+            print(f"Found {len(messages)} emails for query: {query[:50]}...")
             
             for message in messages:
                 msg_id = message['id']
                 
-                if email_processed(msg_id):
-                    continue
-                
+                # Process ALL emails, not just new ones
                 msg = service.users().messages().get(
                     userId='me',
                     id=msg_id,
@@ -147,7 +152,7 @@ def process_job_emails():
         print("Connected to Gmail successfully")
         
         emails = fetch_job_alert_emails(service)
-        print(f"Found {len(emails)} unprocessed job alert emails")
+        print(f"Found {len(emails)} job alert emails from the last 30 days")
         
         total_jobs = 0
         auto_rejected = 0
@@ -167,6 +172,7 @@ def process_job_emails():
                     job['match_score'] = ai_result['match_score']
                     job['ai_analysis'] = ai_result['analysis']
                 
+                # Try to insert job (database will handle duplicates)
                 job_id = insert_job(job)
                 if job_id:
                     total_jobs += 1
@@ -176,8 +182,12 @@ def process_job_emails():
                     else:
                         score = job.get('match_score', 0)
                         print(f"  ✅ Added: {job['job_title']} at {job['company_name']} (Match: {score}%)")
+                else:
+                    print(f"  ⏭️  Skipped duplicate: {job['job_title']}")
             
-            mark_email_processed(email['id'])
+            # Mark email as processed
+            if not email_processed(email['id']):
+                mark_email_processed(email['id'])
         
         print(f"\n📊 Summary:")
         print(f"   Total jobs found: {total_jobs}")
