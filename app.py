@@ -68,26 +68,21 @@ def index():
 @app.route('/api/sync', methods=['POST'])
 @login_required
 def sync_emails():
-    try:
-        result = process_job_emails()
-        return jsonify(result)
-    except Exception as e:
-        error_msg = str(e)
-        print(f"Sync error: {error_msg}")
-        if 'AUTHORIZATION_REQUIRED|||' in error_msg:
-            parts = error_msg.split('|||')
-            if len(parts) == 2:
-                auth_url = parts[1]
-                print(f"Returning auth_url: {auth_url}")
-                return jsonify({
-                    'success': False,
-                    'error': 'authorization_required',
-                    'auth_url': auth_url
-                }), 200
-        return jsonify({
-            'success': False,
-            'error': error_msg
-        }), 500
+    result = process_job_emails()
+    
+    # Check if authorization is required
+    if not result.get('success') and 'AUTHORIZATION_REQUIRED|||' in result.get('error', ''):
+        parts = result['error'].split('|||')
+        if len(parts) == 2:
+            auth_url = parts[1]
+            print(f"Authorization required. URL: {auth_url}")
+            return jsonify({
+                'success': False,
+                'error': 'authorization_required',
+                'auth_url': auth_url
+            })
+    
+    return jsonify(result)
 
 @app.route('/api/auth/complete', methods=['POST'])
 @login_required
