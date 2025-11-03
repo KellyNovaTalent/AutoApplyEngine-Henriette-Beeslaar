@@ -101,6 +101,11 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
     conn = get_connection()
     cursor = conn.cursor()
     
+    ai_analysis = job_data.get('ai_analysis')
+    if isinstance(ai_analysis, dict):
+        import json
+        ai_analysis = json.dumps(ai_analysis)
+    
     cursor.execute('''
         INSERT INTO jobs (
             job_title, company_name, location, description, job_url,
@@ -119,7 +124,7 @@ def insert_job(job_data: Dict[str, Any]) -> Optional[int]:
         job_data.get('status', 'new'),
         job_data.get('rejection_reason'),
         job_data.get('match_score', 0),
-        job_data.get('ai_analysis'),
+        ai_analysis,
         job_data.get('email_id')
     ))
     
