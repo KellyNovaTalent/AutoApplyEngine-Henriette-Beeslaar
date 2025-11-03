@@ -92,24 +92,32 @@ def get_email_headers(headers: List[Dict]) -> Dict[str, str]:
 
 def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30) -> List[Dict[str, Any]]:
     """
-    Fetch job alert emails from LinkedIn, Seek NZ, and Education Gazette NZ from the last X days.
-    Returns list of email data.
+    Fetch job alert emails with FLEXIBLE detection from the last X days.
+    Searches for job-related keywords and URLs instead of strict sender matching.
     """
     from datetime import datetime, timedelta
     
     # Calculate date filter (last 30 days)
     date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
     
+    # MUCH MORE FLEXIBLE queries - look for job-related content anywhere
     queries = [
-        f'from:linkedin.com OR from:jobs-listings@linkedin.com subject:(job alert OR recommended) after:{date_filter}',
-        f'from:seek.co.nz subject:(job alert OR job recommendation) after:{date_filter}',
-        f'from:gazette.education.govt.nz after:{date_filter}'
+        # LinkedIn - any mention
+        f'(from:linkedin.com OR subject:linkedin OR body:linkedin.com/jobs) after:{date_filter}',
+        # Seek NZ - any mention
+        f'(from:seek.co.nz OR subject:seek OR body:seek.co.nz/job) after:{date_filter}',
+        # Education Gazette - multiple possible senders
+        f'(from:edgazette.govt.nz OR from:education.govt.nz OR from:gazette.education.govt.nz OR subject:"education gazette" OR body:edgazette.govt.nz) after:{date_filter}',
+        # Generic job alert keywords
+        f'(subject:"job alert" OR subject:"new jobs" OR subject:"job opportunity" OR subject:"teaching position" OR subject:"teacher vacancy") after:{date_filter}'
     ]
     
     all_emails = []
+    seen_ids = set()
     
     for query in queries:
         try:
+            print(f"Searching: {query[:80]}...")
             results = service.users().messages().list(
                 userId='me',
                 q=query,
@@ -117,12 +125,17 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
             ).execute()
             
             messages = results.get('messages', [])
-            print(f"Found {len(messages)} emails for query: {query[:50]}...")
+            print(f"  → Found {len(messages)} emails")
             
             for message in messages:
                 msg_id = message['id']
                 
-                # Process ALL emails, not just new ones
+                # Skip duplicates
+                if msg_id in seen_ids:
+                    continue
+                seen_ids.add(msg_id)
+                
+                # Process ALL emails
                 msg = service.users().messages().get(
                     userId='me',
                     id=msg_id,
@@ -132,17 +145,24 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
                 headers = get_email_headers(msg['payload']['headers'])
                 body = decode_email_body(msg['payload'])
                 
+                email_from = headers.get('From', '')
+                email_subject = headers.get('Subject', '')
+                
+                # Log what we found
+                print(f"  📧 From: {email_from[:50]}, Subject: {email_subject[:50]}")
+                
                 all_emails.append({
                     'id': msg_id,
-                    'from': headers.get('From', ''),
-                    'subject': headers.get('Subject', ''),
+                    'from': email_from,
+                    'subject': email_subject,
                     'body': body,
                     'date': headers.get('Date', '')
                 })
                 
         except Exception as e:
-            print(f"Error fetching emails for query '{query}': {e}")
+            print(f"Error fetching emails for query: {e}")
     
+    print(f"\n✅ Total unique emails found: {len(all_emails)}")
     return all_emails
 
 def process_job_emails():
