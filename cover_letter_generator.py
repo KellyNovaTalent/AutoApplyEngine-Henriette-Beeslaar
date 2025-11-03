@@ -53,7 +53,7 @@ Description: {job_data['description'][:1500]}
 Write the complete cover letter now:"""
 
     response = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
+        model="claude-3-5-haiku-20241022",
         max_tokens=1500,
         messages=[{
             "role": "user",

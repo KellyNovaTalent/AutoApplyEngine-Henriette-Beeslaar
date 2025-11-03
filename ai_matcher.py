@@ -59,7 +59,7 @@ SCORE: [number 0-100]
 ANALYSIS: [your 2-3 sentence analysis]"""
 
         message = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
+            model="claude-3-5-haiku-20241022",
             max_tokens=300,
             temperature=0.3,
             messages=[{
@@ -89,6 +89,9 @@ ANALYSIS: [your 2-3 sentence analysis]"""
             if line.startswith('SCORE:'):
                 try:
                     score_str = line.replace('SCORE:', '').strip()
+                    # Handle formats like "95/100" or "95"
+                    if '/' in score_str:
+                        score_str = score_str.split('/')[0].strip()
                     score = int(score_str)
                     print(f"Extracted score: {score}")
                 except Exception as e:
