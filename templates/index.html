@@ -21,9 +21,36 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- URL Paste Section -->
+        <!-- JobCopilot Auto Search Section -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-8 mb-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 JobCopilot Auto-Search</h2>
+                    <p class="text-gray-700">Automatically search LinkedIn + Seek NZ for teaching jobs in New Zealand</p>
+                    <p class="text-sm text-gray-600 mt-1">✨ Scheduler runs every 3 hours  •  🤖 AI matches jobs  •  📧 Auto-applies to 70%+ matches</p>
+                </div>
+                <button 
+                    onclick="autoSearchJobs()" 
+                    id="autoSearchBtn"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap"
+                >
+                    <span id="autoSearchText">🔍 Auto Search Jobs</span>
+                </button>
+            </div>
+            
+            <div id="autoSearchProgress" class="hidden mt-4">
+                <div class="bg-white rounded-lg p-4 border-2 border-purple-200">
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-3"></div>
+                        <span class="text-gray-700 font-medium" id="autoSearchProgressText">Searching for jobs...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual URL Paste Section (Optional) -->
         <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-8 mb-6">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Paste Job URLs for AI Analysis</h2>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Manual URL Analysis (Optional)</h2>
             <p class="text-gray-700 mb-4">Paste job URLs from LinkedIn, Seek NZ, or Education Gazette (one per line). AI will analyze each job against your CV and calculate match scores.</p>
             
             <form id="analyzeForm" onsubmit="analyzeJobs(event)">
@@ -59,22 +86,28 @@
         </div>
 
         <!-- Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-sm text-gray-600">Total Jobs</div>
                 <div class="text-3xl font-bold text-gray-900">{{ stats.total_jobs }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Excellent Matches (70%+)</div>
+                <div class="text-sm text-gray-600">Excellent (70%+)</div>
                 <div class="text-3xl font-bold text-green-600">{{ stats.high_matches }}</div>
+                <div class="text-xs text-gray-500 mt-1">Auto-apply</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Good Matches (50-69%)</div>
+                <div class="text-sm text-gray-600">Good (50-69%)</div>
                 <div class="text-3xl font-bold text-yellow-600">{{ stats.medium_matches }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Lower Matches (<50%)</div>
+                <div class="text-sm text-gray-600">Lower (<50%)</div>
                 <div class="text-3xl font-bold text-gray-600">{{ stats.low_matches }}</div>
+            </div>
+            <div class="bg-purple-50 rounded-lg shadow p-6 border-2 border-purple-200">
+                <div class="text-sm text-purple-700 font-medium">Applied</div>
+                <div class="text-3xl font-bold text-purple-600">{{ stats.get('applied', 0) }}</div>
+                <div class="text-xs text-purple-500 mt-1">Auto-sent</div>
             </div>
         </div>
 
@@ -233,6 +266,44 @@
             }
             
             alert('Cover letter generation coming soon! This will use Claude AI to create a personalized cover letter based on your CV and the job description.');
+        }
+        
+        async function autoSearchJobs() {
+            const btn = document.getElementById('autoSearchBtn');
+            const btnText = document.getElementById('autoSearchText');
+            const progress = document.getElementById('autoSearchProgress');
+            const progressText = document.getElementById('autoSearchProgressText');
+            
+            btn.disabled = true;
+            btnText.textContent = '⏳ Searching...';
+            progress.classList.remove('hidden');
+            progressText.textContent = 'Searching LinkedIn + Seek NZ for teaching jobs...';
+            
+            try {
+                const response = await fetch('/auto_search_jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Found ${data.jobs_found} new jobs! AI analyzing and auto-applying to 70%+ matches...`;
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    alert('Error: ' + (data.error || 'Auto-search failed'));
+                    progress.classList.add('hidden');
+                    btn.disabled = false;
+                    btnText.textContent = '🔍 Auto Search Jobs';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+                btn.disabled = false;
+                btnText.textContent = '🔍 Auto Search Jobs';
+            }
         }
     </script>
 </body>
