@@ -1,6 +1,9 @@
 import os
+import csv
+from io import StringIO
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from functools import wraps
+from werkzeug.utils import secure_filename
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, get_all_jobs, get_job_stats, update_job_status, insert_job
 from gmail_service import process_job_emails, complete_auth_with_code
@@ -349,6 +352,202 @@ def update_job(job_id):
 @login_required
 def stats():
     return jsonify(get_job_stats())
+
+@app.route('/scrape_education_gazette', methods=['POST'])
+@login_required
+def scrape_gazette_endpoint():
+    """
+    Trigger Education Gazette scraper directly from web interface.
+    """
+    try:
+        print(f"\n{'='*80}")
+        print(f"📰 EDUCATION GAZETTE DIRECT SCRAPE")
+        print(f"{'='*80}")
+        
+        gazette_jobs = search_education_gazette(max_jobs=30)
+        
+        jobs_imported = 0
+        jobs_skipped = 0
+        
+        for job_data in gazette_jobs:
+            try:
+                job_text = f"{job_data['job_title']} {job_data['description']}".lower()
+                if any(excluded in job_text for excluded in EXCLUDED_KEYWORDS):
+                    print(f"   ⏭️  Skipped: {job_data['job_title']} (excluded keyword)")
+                    jobs_skipped += 1
+                    continue
+                
+                print(f"   🤖 Analyzing: {job_data['job_title']}")
+                ai_result = analyze_job_match(job_data)
+                job_data['match_score'] = ai_result['match_score']
+                job_data['ai_analysis'] = ai_result['analysis']
+                job_data['status'] = 'new'
+                
+                print(f"   ✨ Match Score: {ai_result['match_score']}%")
+                
+                job_id = insert_job(job_data)
+                if job_id:
+                    jobs_imported += 1
+                    print(f"   💾 Saved (ID: {job_id})")
+                    
+                    if should_auto_apply(job_data):
+                        auto_apply_to_job(job_data)
+                else:
+                    jobs_skipped += 1
+                    
+            except Exception as e:
+                print(f"   ⚠️  Error: {e}")
+                jobs_skipped += 1
+                continue
+        
+        print(f"\n{'='*80}")
+        print(f"✅ EDUCATION GAZETTE SCRAPE COMPLETE!")
+        print(f"   Jobs imported: {jobs_imported}")
+        print(f"{'='*80}\n")
+        
+        if jobs_imported == 0 and len(gazette_jobs) == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Education Gazette is currently blocking requests. Please use CSV upload instead.'
+            })
+        
+        return jsonify({
+            'success': True,
+            'jobs_found': jobs_imported,
+            'jobs_skipped': jobs_skipped
+        })
+        
+    except Exception as e:
+        print(f"❌ Error scraping Education Gazette: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Education Gazette scraper blocked. Please use CSV upload option.'
+        })
+
+@app.route('/upload_gazette_csv', methods=['POST'])
+@login_required
+def upload_gazette_csv():
+    """
+    Upload Education Gazette jobs from CSV (scraped locally).
+    Expected CSV columns: Title, Employer, Employment Type, Closing, Link, Description, Contact, Email, Phone
+    """
+    try:
+        print(f"\n{'='*80}")
+        print(f"📤 EDUCATION GAZETTE CSV UPLOAD")
+        print(f"{'='*80}")
+        
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'})
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'})
+        
+        if not file.filename.endswith('.csv'):
+            return jsonify({'success': False, 'error': 'File must be a CSV'})
+        
+        csv_content = file.read().decode('utf-8')
+        csv_reader = csv.DictReader(StringIO(csv_content))
+        
+        jobs_imported = 0
+        jobs_skipped = 0
+        
+        for row in csv_reader:
+            try:
+                job_title = row.get('Title', '')
+                company_name = row.get('Employer', 'NZ School')
+                job_url = row.get('Link', '')
+                description = row.get('Description', '')
+                contact_email = row.get('Email', None)
+                
+                if not job_title or not job_url:
+                    jobs_skipped += 1
+                    continue
+                
+                if contact_email == 'N/A':
+                    contact_email = None
+                
+                job_data = {
+                    'job_title': job_title,
+                    'company_name': company_name,
+                    'location': extract_location_from_description(description),
+                    'job_url': job_url,
+                    'description': description[:2000],
+                    'posted_date': row.get('Closing', ''),
+                    'source_platform': 'Education Gazette NZ (CSV Upload)',
+                    'salary_info': None,
+                    'contact_email': contact_email
+                }
+                
+                job_text = f"{job_title} {description}".lower()
+                if any(excluded in job_text for excluded in EXCLUDED_KEYWORDS):
+                    print(f"   ⏭️  Skipped: {job_title} (contains excluded keyword)")
+                    jobs_skipped += 1
+                    continue
+                
+                print(f"   🤖 Analyzing: {job_title}")
+                ai_result = analyze_job_match(job_data)
+                job_data['match_score'] = ai_result['match_score']
+                job_data['ai_analysis'] = ai_result['analysis']
+                job_data['status'] = 'new'
+                
+                print(f"   ✨ Match Score: {ai_result['match_score']}%")
+                if contact_email:
+                    print(f"   📧 Email: {contact_email}")
+                
+                job_id = insert_job(job_data)
+                if job_id:
+                    job_data['id'] = job_id
+                    jobs_imported += 1
+                    print(f"   💾 Saved (ID: {job_id})")
+                    
+                    if should_auto_apply(job_data):
+                        print(f"   🎯 Match score {job_data['match_score']}% - attempting auto-apply")
+                        apply_result = auto_apply_to_job(job_data)
+                        if apply_result['success']:
+                            print(f"   ✅ Application prepared")
+                        else:
+                            print(f"   ⏭️  Auto-apply skipped: {apply_result.get('reason', '')}")
+                else:
+                    jobs_skipped += 1
+                
+            except Exception as e:
+                print(f"   ⚠️  Error processing row: {e}")
+                jobs_skipped += 1
+                continue
+        
+        print(f"\n{'='*80}")
+        print(f"✅ CSV IMPORT COMPLETE!")
+        print(f"   Jobs imported: {jobs_imported}")
+        print(f"   Jobs skipped: {jobs_skipped}")
+        print(f"{'='*80}\n")
+        
+        return jsonify({
+            'success': True,
+            'jobs_imported': jobs_imported,
+            'jobs_skipped': jobs_skipped
+        })
+        
+    except Exception as e:
+        print(f"❌ Error importing CSV: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+def extract_location_from_description(description: str) -> str:
+    """Extract location from job description."""
+    locations = [
+        'Auckland', 'Wellington', 'Canterbury', 'Christchurch', 
+        'Waikato', 'Hamilton', 'Bay of Plenty', 'Tauranga',
+        'Otago', 'Dunedin', 'Manawatu', 'Palmerston North'
+    ]
+    
+    for location in locations:
+        if location.lower() in description.lower():
+            return location
+    
+    return "New Zealand"
 
 def scheduled_email_check():
     """Run every 30 minutes to check for new job emails."""

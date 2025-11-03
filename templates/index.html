@@ -23,12 +23,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- JobCopilot Auto Search Section -->
         <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-lg p-8 mb-6">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 JobCopilot Auto-Search</h2>
-                    <p class="text-gray-700">Automatically search LinkedIn + Seek NZ for teaching jobs in New Zealand</p>
-                    <p class="text-sm text-gray-600 mt-1">✨ Runs every 3 hours  •  🤖 AI matches jobs  •  ✍️ Generates cover letters for 70%+ matches</p>
-                </div>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">🚀 JobCopilot Auto-Search</h2>
+                <p class="text-gray-700">Automatically search LinkedIn + Seek NZ for teaching jobs in New Zealand</p>
+                <p class="text-sm text-gray-600 mt-1">✨ Runs every 3 hours  •  🤖 AI matches jobs  •  ✍️ Generates cover letters for 70%+ matches</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3 mb-4">
                 <button 
                     onclick="autoSearchJobs()" 
                     id="autoSearchBtn"
@@ -36,6 +37,19 @@
                 >
                     <span id="autoSearchText">🔍 Auto Search Jobs</span>
                 </button>
+                
+                <button 
+                    onclick="scrapeEducationGazette()" 
+                    id="gazetteBtn"
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap"
+                >
+                    <span id="gazetteText">📰 Search Education Gazette</span>
+                </button>
+                
+                <label for="gazetteFile" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md whitespace-nowrap cursor-pointer">
+                    <span>📤 Upload Gazette CSV</span>
+                    <input type="file" id="gazetteFile" accept=".csv" class="hidden" onchange="uploadGazetteCSV(event)">
+                </label>
             </div>
             
             <div id="autoSearchProgress" class="hidden mt-4">
@@ -302,6 +316,80 @@
             }
             
             alert('Cover letter generation coming soon! This will use Claude AI to create a personalized cover letter based on your CV and the job description.');
+        }
+        
+        async function scrapeEducationGazette() {
+            const btn = document.getElementById('gazetteBtn');
+            const btnText = document.getElementById('gazetteText');
+            const progress = document.getElementById('autoSearchProgress');
+            const progressText = document.getElementById('autoSearchProgressText');
+            
+            btn.disabled = true;
+            btnText.textContent = '⏳ Scraping...';
+            progress.classList.remove('hidden');
+            progressText.textContent = 'Searching Education Gazette NZ for Foundation Phase jobs...';
+            
+            try {
+                const response = await fetch('/scrape_education_gazette', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Found ${data.jobs_found} jobs from Education Gazette! Refreshing...`;
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    alert('Education Gazette: ' + (data.error || 'Scraper blocked by website. Please use CSV upload instead.'));
+                    progress.classList.add('hidden');
+                    btn.disabled = false;
+                    btnText.textContent = '📰 Search Education Gazette';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+                btn.disabled = false;
+                btnText.textContent = '📰 Search Education Gazette';
+            }
+        }
+        
+        async function uploadGazetteCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const progress = document.getElementById('autoSearchProgress');
+            const progressText = document.getElementById('autoSearchProgressText');
+            
+            progress.classList.remove('hidden');
+            progressText.textContent = 'Uploading and processing CSV...';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload_gazette_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Imported ${data.jobs_imported} jobs from Education Gazette! Refreshing...`;
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    alert('Error: ' + (data.error || 'Upload failed'));
+                    progress.classList.add('hidden');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+            }
+            
+            event.target.value = '';
         }
         
         async function autoSearchJobs() {

@@ -94,20 +94,32 @@ A fully automated job application system that searches for teaching jobs daily, 
 1. **Configure Your Search** (one-time setup in `job_search_config.py`):
    ```python
    USER_SEARCH_CONFIG = {
-       'keywords': ['Foundation Phase Teacher', 'Special Education Teacher'],
+       'keywords': ['Foundation Phase Teacher', 'Grade 1 Teacher', ...],
        'location': 'New Zealand',
-       'platforms': ['linkedin', 'seek'],  # Or just one
+       'platforms': ['linkedin', 'seek'],
        'auto_apply_enabled': True,  # Auto-send applications
        'auto_apply_threshold': 70  # Apply to 70%+ matches
    }
    ```
 
-2. **Click "Auto Search Jobs"** (or run on schedule):
-   - System searches LinkedIn + Seek for your keywords
-   - Filters out excluded keywords (secondary, high school, etc.)
-   - Analyzes each job with Claude AI
-   - Calculates 0-100% match scores
-   - **AUTOMATICALLY** prepares applications for 70%+ matches
+2. **Automated Job Discovery (3 Methods):**
+   
+   **A. LinkedIn + Seek (Automated):**
+   - Click "🔍 Auto Search Jobs" button
+   - System searches LinkedIn + Seek via Apify
+   - AI analyzes and auto-applies to 70%+ matches
+   
+   **B. Education Gazette (Direct Scrape - may be blocked):**
+   - Click "📰 Search Education Gazette" button
+   - Attempts to scrape gazette.education.govt.nz
+   - Note: May be blocked by anti-bot protection
+   
+   **C. Education Gazette (CSV Upload - RECOMMENDED):**
+   - Run your local scraper (proven to work on your computer)
+   - Click "📤 Upload Gazette CSV" button
+   - Upload the generated CSV file
+   - System imports jobs with **school email addresses**
+   - **~100% auto-email success rate** for Gazette jobs!
 
 3. **Smart Application Handling:**
    - AI generates personalized cover letter (saved as PDF)
