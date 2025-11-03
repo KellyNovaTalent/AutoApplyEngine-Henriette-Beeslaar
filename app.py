@@ -332,10 +332,106 @@ def scheduled_email_check():
     with app.app_context():
         process_job_emails()
 
+def scheduled_job_search():
+    """Run every 3 hours to automatically search for jobs using Apify."""
+    print(f"\n{'='*80}")
+    print(f"🤖 SCHEDULED AUTO JOB SEARCH (JobCopilot Mode)")
+    print(f"{'='*80}")
+    
+    with app.app_context():
+        try:
+            # Check if auto search is enabled
+            if not USER_SEARCH_CONFIG.get('enabled', True):
+                print("⏸️  Auto search is disabled in config")
+                return
+            
+            # Check usage limits
+            usage_stats = get_usage_stats()
+            print(f"📊 Today's usage: {usage_stats['searches_today']} searches, {usage_stats['jobs_fetched_today']} jobs")
+            
+            if not can_make_search():
+                print("⚠️  Daily search limit reached, skipping this run")
+                return
+            
+            all_jobs_found = []
+            total_new_jobs = 0
+            total_jobs_from_apify = 0
+            jobs_fetched_this_run = 0
+            
+            # Determine platforms
+            platforms_to_search = USER_SEARCH_CONFIG.get('platforms', ['linkedin', 'seek'])
+            if 'linkedin' in platforms_to_search and 'seek' in platforms_to_search:
+                platform_mode = 'both'
+            elif 'linkedin' in platforms_to_search:
+                platform_mode = 'linkedin'
+            elif 'seek' in platforms_to_search:
+                platform_mode = 'seek'
+            else:
+                print("❌ No platforms configured")
+                return
+            
+            # Search for each keyword
+            for keyword in USER_SEARCH_CONFIG['keywords']:
+                print(f"\n🔎 Searching for: {keyword}")
+                
+                jobs_per_keyword = USER_SEARCH_CONFIG['max_jobs_per_search'] // len(USER_SEARCH_CONFIG['keywords'])
+                
+                if not can_fetch_jobs(jobs_per_keyword, jobs_fetched_this_run):
+                    print(f"⚠️  Daily job limit would be exceeded, stopping search")
+                    break
+                
+                jobs = search_jobs_apify(
+                    keywords=keyword,
+                    location=USER_SEARCH_CONFIG['location'],
+                    max_jobs=jobs_per_keyword,
+                    platform=platform_mode,
+                    remote_only=USER_SEARCH_CONFIG.get('remote_ok', False)
+                )
+                
+                print(f"   Found {len(jobs)} jobs for '{keyword}'")
+                total_jobs_from_apify += len(jobs)
+                jobs_fetched_this_run += len(jobs)
+                all_jobs_found.extend(jobs)
+            
+            # Process each job
+            record_search(jobs_fetched_this_run)
+            
+            for job in all_jobs_found:
+                # Analyze with AI
+                print(f"\n🤖 Analyzing: {job['job_title']} at {job['company_name']}")
+                ai_result = analyze_job_match(job)
+                job['match_score'] = ai_result['match_score']
+                job['ai_analysis'] = ai_result['analysis']
+                
+                # Save to database
+                job_id = insert_job(job)
+                if job_id:
+                    total_new_jobs += 1
+                    job['id'] = job_id
+                    print(f"  ✅ Match Score: {job['match_score']}%")
+                    
+                    # Auto-apply if 70%+ match
+                    if should_auto_apply(job):
+                        print(f"  🎯 Auto-applying (70%+ match)...")
+                        auto_apply_to_job(job)
+            
+            print(f"\n{'='*80}")
+            print(f"✅ SCHEDULED AUTO SEARCH COMPLETE!")
+            print(f"   New jobs found: {total_new_jobs}")
+            print(f"   Jobs fetched from Apify: {total_jobs_from_apify}")
+            print(f"{'='*80}\n")
+            
+        except Exception as e:
+            print(f"❌ Error in scheduled job search: {e}")
+            import traceback
+            traceback.print_exc()
+
 if __name__ == '__main__':
     init_db()
     
     scheduler = BackgroundScheduler()
+    
+    # Email checking every 30 minutes
     scheduler.add_job(
         func=scheduled_email_check,
         trigger="interval",
@@ -344,10 +440,22 @@ if __name__ == '__main__':
         name='Check for new job emails every 30 minutes',
         replace_existing=True
     )
+    
+    # Automatic job search every 3 hours
+    scheduler.add_job(
+        func=scheduled_job_search,
+        trigger="interval",
+        hours=3,
+        id='auto_search_job',
+        name='Auto-search for jobs every 3 hours (JobCopilot)',
+        replace_existing=True
+    )
+    
     scheduler.start()
     
     print("🚀 Job Application System Starting...")
     print("📧 Email checking scheduled every 30 minutes")
+    print("🔍 Auto job search scheduled every 3 hours (JobCopilot Mode)")
     print("🔐 Authentication enabled")
     
     try:

@@ -4,7 +4,7 @@ User can set their job search preferences here.
 """
 
 USER_SEARCH_CONFIG = {
-    'enabled': True,
+    'enabled': True,  # Enable/disable automatic scheduled job searching
     'keywords': [
         'Foundation Phase Teacher',
         'Primary School Teacher',
