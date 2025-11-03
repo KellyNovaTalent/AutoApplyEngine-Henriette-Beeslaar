@@ -136,10 +136,8 @@ def analyze_jobs():
         for url in valid_urls:
             print(f"\n📋 Fetching: {url[:60]}...")
             
-            # Try Apify first, fall back to basic scraping
+            # Fetch job data using Apify scraper
             job_data = fetch_job_from_url_apify(url)
-            if not job_data:
-                job_data = fetch_job_from_url(url)
             
             if not job_data:
                 print(f"   ❌ Failed to fetch job")
