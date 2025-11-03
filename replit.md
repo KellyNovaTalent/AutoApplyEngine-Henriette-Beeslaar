@@ -1,17 +1,22 @@
-# Job Application System with AI Matching
+# Job Application AI Assistant (JobCopilot Clone)
 
 ## Overview
-A fully automatic single-user job application monitoring system that connects to Gmail, parses job alerts from LinkedIn, Seek NZ, and Education Gazette NZ, auto-filters sponsorship jobs, **uses Claude AI to score job matches**, and provides a web dashboard with intelligent job recommendations.
+A JobCopilot-style job application assistant where you paste job URLs, AI analyzes each against your CV, calculates match scores (0-100%), and provides intelligent recommendations. Built for Foundation Phase/Special Ed teachers targeting NZ positions.
 
 ## Features
-- **Gmail API Integration**: Reads ALL job alert emails from the last 30 days from LinkedIn, Seek NZ, and Education Gazette NZ
-- **AI-Powered Job Matching**: Claude 3.5 Sonnet analyzes ALL jobs (including those with sponsorship) and assigns match scores (0-100%) based on CV
-- **Multi-Source Support**: Handles LinkedIn, Seek NZ, and Education Gazette NZ job alerts with extensible parser system
-- **Web Dashboard**: Clean Tailwind CSS interface with color-coded match scores, AI analysis, filtering, and statistics
-- **Comprehensive Sync**: Fetches up to 100 emails per source from the last 30 days (not just new emails)
-- **Automatic Processing**: Background job runs every 30 minutes to check for new emails
+- **URL Paste Interface**: Paste job URLs from LinkedIn, Seek NZ, Education Gazette (one per line)
+- **Automatic Job Fetching**: Web scraper extracts job title, company, location, description from URLs
+- **AI-Powered Analysis**: Claude 3.5 Sonnet analyzes each job against your CV and assigns 0-100% match score
+- **Intelligent Categorization**: 
+  - 70-100% = EXCELLENT match (green badge)
+  - 50-69% = GOOD match (yellow badge)
+  - 0-49% = Lower match (gray badge)
+- **Detailed AI Reasoning**: Shows why each job is/isn't a good match
+- **Multi-Source Support**: Handles LinkedIn, Seek NZ, and Education Gazette NZ job postings
+- **Auto-Apply Ready**: Jobs with 80%+ match show "Auto-Apply" button (cover letter generation coming soon)
+- **Clean Dashboard**: Tailwind CSS interface with color-coded borders, match scores, and filtering
 - **Single-User Authentication**: Secure password-protected access
-- **SQLite Database**: Stores all job data with AI analysis and match scores, handles duplicates automatically
+- **SQLite Database**: Stores analyzed jobs, prevents duplicates
 
 ## Tech Stack
 - **Backend**: Python 3.11, Flask
@@ -23,18 +28,15 @@ A fully automatic single-user job application monitoring system that connects to
 
 ## Project Structure
 ```
-├── app.py                      # Flask application with routes and scheduler
-├── database.py                 # SQLite database operations with AI fields
-├── gmail_service.py            # Gmail API integration with AI workflow
-├── email_parser.py             # Email parsing for LinkedIn, Seek NZ, and Education Gazette NZ
+├── app.py                      # Flask application with URL analysis endpoint
+├── database.py                 # SQLite database operations with match scores
+├── job_fetcher.py              # Web scraper for LinkedIn, Seek, Education Gazette
 ├── ai_matcher.py               # Claude AI job matching and scoring
 ├── cv_profile.py               # User CV profile and job preferences
 ├── templates/
 │   ├── login.html             # Login page
-│   └── index.html             # Dashboard with AI match scores
-├── requirements.txt            # Python dependencies (including anthropic)
-├── SETUP_INSTRUCTIONS.md       # Gmail API setup guide
-├── AI_INTEGRATION_GUIDE.md     # AI matching documentation
+│   └── index.html             # URL paste interface + results dashboard
+├── requirements.txt            # Python dependencies
 └── jobs.db                    # SQLite database (created at runtime)
 ```
 
@@ -43,10 +45,18 @@ A fully automatic single-user job application monitoring system that connects to
 2. **AUTH_PASSWORD**: Dashboard login password
 3. **ANTHROPIC_API_KEY**: Claude AI API key for job matching
 
-## Setup Required
-1. **Gmail API Credentials**: Upload `credentials.json` from Google Cloud Console (see SETUP_INSTRUCTIONS.md)
-2. **Set Environment Secrets**: SECRET_KEY, AUTH_PASSWORD, ANTHROPIC_API_KEY
-3. **First Run**: Click "Sync Emails" to authenticate with Gmail and start monitoring
+## How to Use
+1. **Login** with your password
+2. **Find jobs** on LinkedIn, Seek NZ, or Education Gazette
+3. **Copy job URLs** from your browser
+4. **Paste URLs** into the text box (one per line)
+5. **Click "Analyze Jobs with AI"** - system will:
+   - Fetch job details from each URL
+   - Analyze against your CV with Claude AI
+   - Calculate match scores
+   - Display results with color-coding
+6. **Review results**: Green badges = excellent matches, yellow = good, gray = lower
+7. **Click "Auto-Apply"** on 80%+ matches (coming soon)
 
 ## Database Schema
 - **jobs**: Job postings with details, status, AI match_score, ai_analysis
@@ -74,21 +84,19 @@ Claude AI analyzes each job based on:
 - **Languages**: English and Afrikaans
 
 ## Recent Changes
-- Nov 3, 2025: Updated to fetch ALL emails from last 30 days (up to 100 per source), not just new ones
-- Nov 3, 2025: Removed auto-rejection filter - all jobs now analyzed by AI (including sponsorship)
-- Nov 3, 2025: Added Education Gazette NZ email parser for teaching job alerts
-- Nov 3, 2025: Integrated Claude AI for automatic job matching
-- Nov 3, 2025: Added AI analysis and match score fields to database
-- Nov 3, 2025: Updated UI with color-coded match scores and AI analysis display
-- Nov 3, 2025: Fixed AI response parsing to handle ThinkingBlock correctly
-- Nov 2, 2025: Initial project setup with Gmail integration and auto-rejection
-- Nov 2, 2025: Implemented LinkedIn and Seek NZ email parsers
-- Nov 2, 2025: Built web dashboard with statistics and filtering
-- Nov 2, 2025: Secured authentication with environment variables
+- Nov 3, 2025: **MAJOR PIVOT** - Switched from email monitoring to JobCopilot-style URL paste system
+- Nov 3, 2025: Built job_fetcher.py - web scraper for LinkedIn, Seek, Education Gazette
+- Nov 3, 2025: Created URL paste interface with "Analyze Jobs" button
+- Nov 3, 2025: Added /analyze_jobs endpoint - processes multiple URLs in one request
+- Nov 3, 2025: Updated dashboard with match score categories (70%+, 50-69%, <50%)
+- Nov 3, 2025: Added color-coded job cards (green/yellow/gray borders based on match)
+- Nov 3, 2025: Integrated Claude AI for job analysis (already working from previous version)
+- Nov 3, 2025: Removed dependency on Gmail API - simpler, more reliable
+- Nov 3, 2025: User now has full control over which jobs to analyze
 
 ## User Preferences
 - Single-user system (Foundation Phase teacher seeking NZ positions)
-- Automatic processing without approval workflow
-- Analyze ALL jobs with AI (including those mentioning sponsorship)
-- AI-powered job matching with detailed reasoning
-- Clean, informative UI with prominent match scores
+- Manual URL pasting (user controls which jobs to analyze)
+- AI-powered job matching with detailed reasoning and 0-100% scores
+- Clean, informative UI with color-coded match badges
+- Focus on simplicity and reliability over automation
