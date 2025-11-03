@@ -28,6 +28,38 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Authorization Code Input (hidden by default) -->
+        <div id="authCodeSection" class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg shadow mb-6" style="display: none;">
+            <h2 class="text-xl font-bold text-yellow-800 mb-3">🔐 Gmail Authorization Required</h2>
+            <p class="text-gray-700 mb-4">
+                A new tab should have opened with Google's authorization page. After you sign in and allow access, 
+                Google will show you an authorization code. Paste that code below:
+            </p>
+            <div class="flex gap-3">
+                <input 
+                    type="text" 
+                    id="authCodeInput" 
+                    placeholder="Paste authorization code here (e.g., 4/1Ab32j93y...)"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button 
+                    onclick="submitAuthCode()" 
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
+                >
+                    Submit Code
+                </button>
+                <button 
+                    onclick="hideAuthSection()" 
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded"
+                >
+                    Cancel
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mt-3">
+                💡 Don't see the authorization page? <a id="authUrlLink" href="#" target="_blank" class="text-blue-600 underline">Click here to open it</a>
+            </p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-sm text-gray-600">Total Jobs</div>
@@ -195,7 +227,7 @@
                         alert(`✅ Sync complete!\n\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
                         window.location.reload();
                     } else if (data.error === 'authorization_required') {
-                        handleAuthorization(data.auth_url);
+                        showAuthSection(data.auth_url);
                     } else {
                         alert('❌ Error: ' + (data.error || 'Unknown error'));
                         btn.disabled = false;
@@ -209,62 +241,56 @@
                 });
         }
         
-        function handleAuthorization(authUrl) {
+        function showAuthSection(authUrl) {
+            document.getElementById('authCodeSection').style.display = 'block';
+            document.getElementById('authUrlLink').href = authUrl;
+            document.getElementById('authCodeInput').value = '';
+            window.open(authUrl, '_blank');
+            document.getElementById('authCodeInput').focus();
+        }
+        
+        function hideAuthSection() {
+            document.getElementById('authCodeSection').style.display = 'none';
+            const btn = document.getElementById('syncBtn');
+            const text = document.getElementById('syncText');
+            btn.disabled = false;
+            text.textContent = '🔄 Sync Emails';
+        }
+        
+        function submitAuthCode() {
+            const code = document.getElementById('authCodeInput').value.trim();
             const btn = document.getElementById('syncBtn');
             const text = document.getElementById('syncText');
             
-            const message = `🔐 Gmail Authorization Required\n\n` +
-                          `To sync your job alert emails, you need to authorize this app.\n\n` +
-                          `Steps:\n` +
-                          `1. Click OK to open the Google authorization page\n` +
-                          `2. Sign in with your Gmail account\n` +
-                          `3. Click "Allow" to grant read-only email access\n` +
-                          `4. Copy the authorization code from the page\n` +
-                          `5. Paste it in the next prompt\n\n` +
-                          `Ready to authorize?`;
-            
-            if (!confirm(message)) {
-                btn.disabled = false;
-                text.textContent = '🔄 Sync Emails';
+            if (!code) {
+                alert('❌ Please paste the authorization code first.');
                 return;
             }
             
-            window.open(authUrl, '_blank');
+            text.textContent = '⏳ Completing authorization...';
             
-            setTimeout(() => {
-                const code = prompt('📋 Please paste the authorization code from Google:');
-                
-                if (!code) {
-                    alert('❌ No code provided. Please try syncing again.');
-                    btn.disabled = false;
-                    text.textContent = '🔄 Sync Emails';
-                    return;
-                }
-                
-                text.textContent = '⏳ Completing authorization...';
-                
-                fetch('/api/auth/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code: code.trim() })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert(`✅ Authorization successful!\n\nSync complete!\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
-                            window.location.reload();
-                        } else {
-                            alert('❌ Error: ' + (data.error || 'Unknown error'));
-                            btn.disabled = false;
-                            text.textContent = '🔄 Sync Emails';
-                        }
-                    })
-                    .catch(error => {
-                        alert('❌ Error completing authorization: ' + error);
+            fetch('/api/auth/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        hideAuthSection();
+                        alert(`✅ Authorization successful!\n\nSync complete!\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
+                        window.location.reload();
+                    } else {
+                        alert('❌ Error: ' + (data.error || 'Unknown error'));
                         btn.disabled = false;
                         text.textContent = '🔄 Sync Emails';
-                    });
-            }, 2000);
+                    }
+                })
+                .catch(error => {
+                    alert('❌ Error completing authorization: ' + error);
+                    btn.disabled = false;
+                    text.textContent = '🔄 Sync Emails';
+                });
         }
     </script>
 </body>
