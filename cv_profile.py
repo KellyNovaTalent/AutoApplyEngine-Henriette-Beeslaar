@@ -108,5 +108,5 @@ USER_PROFILE = {
         'Learning Support'
     ],
     'languages': ['English', 'Afrikaans'],
-    'cv_path': 'henriette_beeslaar_cv.pdf'
+    'cv_path': 'static/cv/Henriette_Beeslaar_CV.pdf'
 }

@@ -11,7 +11,7 @@ from email import encoders
 from typing import Dict, List, Optional
 from gmail_service import get_gmail_service
 
-def create_email_with_attachments(to: str, subject: str, body: str, attachment_paths: List[str] = None) -> Dict:
+def create_email_with_attachments(to: str, subject: str, body: str, attachment_paths: Optional[List[str]] = None) -> Dict:
     """
     Create an email message with multiple attachments.
     
@@ -52,7 +52,7 @@ def create_email_with_attachments(to: str, subject: str, body: str, attachment_p
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
     return {'raw': raw_message}
 
-def send_email_via_gmail(to: str, subject: str, body: str, attachment_paths: List[str] = None) -> bool:
+def send_email_via_gmail(to: str, subject: str, body: str, attachment_paths: Optional[List[str]] = None) -> bool:
     """
     Send an email via Gmail API with multiple attachments.
     
