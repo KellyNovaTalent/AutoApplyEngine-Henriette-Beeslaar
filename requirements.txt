@@ -7,12 +7,7 @@ beautifulsoup4==4.12.2
 APScheduler==3.10.4
 python-dotenv==1.0.0
 anthropic
-APScheduler
-beautifulsoup4
-Flask
-google-api-python-client
-google-auth
-google-auth-httplib2
-google-auth-oauthlib
-python-dotenv
-anthropic
+apify-client
+requests
+apify-client
+requests

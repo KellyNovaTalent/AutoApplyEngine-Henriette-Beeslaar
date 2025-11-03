@@ -5,7 +5,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, get_all_jobs, get_job_stats, update_job_status, insert_job
 from gmail_service import process_job_emails, complete_auth_with_code
 from job_fetcher import fetch_job_from_url
+from job_fetcher_apify import search_jobs_apify, fetch_job_from_url_apify
 from ai_matcher import analyze_job_match
+from job_search_config import USER_SEARCH_CONFIG, EXCLUDED_KEYWORDS
+from apify_cost_tracker import can_make_search, can_fetch_jobs, record_search, get_usage_stats
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -133,8 +136,10 @@ def analyze_jobs():
         for url in valid_urls:
             print(f"\n📋 Fetching: {url[:60]}...")
             
-            # Fetch job details from URL
-            job_data = fetch_job_from_url(url)
+            # Try Apify first, fall back to basic scraping
+            job_data = fetch_job_from_url_apify(url)
+            if not job_data:
+                job_data = fetch_job_from_url(url)
             
             if not job_data:
                 print(f"   ❌ Failed to fetch job")
@@ -179,6 +184,118 @@ def analyze_jobs():
         
     except Exception as e:
         print(f"❌ Error analyzing jobs: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/auto_search_jobs', methods=['POST'])
+@login_required
+def auto_search_jobs():
+    """JobCopilot-style automated job search using Apify."""
+    try:
+        print(f"\n{'='*80}")
+        print(f"🚀 AUTOMATIC JOB SEARCH STARTED (JobCopilot Mode)")
+        print(f"{'='*80}")
+        
+        # Check usage limits
+        usage_stats = get_usage_stats()
+        print(f"📊 Today's usage: {usage_stats['searches_today']} searches, {usage_stats['jobs_fetched_today']} jobs")
+        
+        if not can_make_search():
+            return jsonify({
+                'success': False,
+                'error': 'Daily search limit reached',
+                'usage': usage_stats
+            })
+        
+        if not USER_SEARCH_CONFIG['enabled']:
+            return jsonify({'success': False, 'error': 'Auto search is disabled'})
+        
+        all_jobs_found = []
+        total_new_jobs = 0
+        total_jobs_from_apify = 0
+        jobs_fetched_this_run = 0
+        
+        # Determine which platforms to search
+        platforms_to_search = USER_SEARCH_CONFIG.get('platforms', ['linkedin', 'seek'])
+        if 'linkedin' in platforms_to_search and 'seek' in platforms_to_search:
+            platform_mode = 'both'
+        elif 'linkedin' in platforms_to_search:
+            platform_mode = 'linkedin'
+        elif 'seek' in platforms_to_search:
+            platform_mode = 'seek'
+        else:
+            return jsonify({'success': False, 'error': 'No platforms configured'})
+        
+        # Search for each keyword
+        for keyword in USER_SEARCH_CONFIG['keywords']:
+            print(f"\n🔎 Searching for: {keyword}")
+            
+            # Calculate jobs to fetch for this keyword
+            jobs_per_keyword = USER_SEARCH_CONFIG['max_jobs_per_search'] // len(USER_SEARCH_CONFIG['keywords'])
+            
+            # Check if we can fetch more jobs (including what we've fetched this run)
+            if not can_fetch_jobs(jobs_per_keyword, jobs_fetched_this_run):
+                print(f"⚠️  Daily job limit would be exceeded, stopping search")
+                print(f"   Already fetched {jobs_fetched_this_run} jobs this run")
+                break
+            
+            # Search using Apify
+            jobs = search_jobs_apify(
+                keywords=keyword,
+                location=USER_SEARCH_CONFIG['location'],
+                max_jobs=jobs_per_keyword,
+                platform=platform_mode,
+                remote_only=USER_SEARCH_CONFIG.get('remote_ok', False)
+            )
+            
+            print(f"   Found {len(jobs)} jobs for '{keyword}'")
+            total_jobs_from_apify += len(jobs)
+            jobs_fetched_this_run += len(jobs)
+            
+            for job_data in jobs:
+                # Filter out excluded keywords
+                job_text = f"{job_data['job_title']} {job_data['description']}".lower()
+                if any(excluded in job_text for excluded in EXCLUDED_KEYWORDS):
+                    print(f"   ⏭️  Skipped: {job_data['job_title']} (contains excluded keyword)")
+                    continue
+                
+                # Analyze with AI
+                print(f"   🤖 Analyzing: {job_data['job_title']}")
+                ai_result = analyze_job_match(job_data)
+                job_data['match_score'] = ai_result['match_score']
+                job_data['ai_analysis'] = ai_result['analysis']
+                job_data['status'] = 'new'
+                job_data['rejection_reason'] = None
+                job_data['email_id'] = None
+                
+                print(f"   ✨ Match Score: {ai_result['match_score']}%")
+                
+                # Insert into database
+                job_id = insert_job(job_data)
+                if job_id:
+                    total_new_jobs += 1
+                    all_jobs_found.append(job_data)
+                    print(f"   💾 Saved (ID: {job_id})")
+        
+        # Record usage (only record once at the end)
+        record_search(jobs_fetched_this_run)
+        
+        print(f"\n{'='*80}")
+        print(f"✅ AUTO SEARCH COMPLETE!")
+        print(f"   New jobs found: {total_new_jobs}")
+        print(f"   Total fetched from Apify: {total_jobs_from_apify}")
+        print(f"{'='*80}\n")
+        
+        return jsonify({
+            'success': True,
+            'jobs_found': total_new_jobs,
+            'keywords_searched': len(USER_SEARCH_CONFIG['keywords']),
+            'usage': get_usage_stats()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error in auto search: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
