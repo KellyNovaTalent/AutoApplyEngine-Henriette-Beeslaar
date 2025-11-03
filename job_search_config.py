@@ -6,29 +6,14 @@ User can set their job search preferences here.
 USER_SEARCH_CONFIG = {
     'enabled': True,  # Enable/disable automatic scheduled job searching
     'keywords': [
-        # Foundation Phase (Grades R-3, Ages 5-9)
-        'Foundation Phase Teacher',
-        'Grade R Teacher',
-        'Grade 1 Teacher',
-        'Grade 2 Teacher', 
-        'Grade 3 Teacher',
-        'Junior Primary Teacher',
-        'ECD Teacher',
-        'Early Childhood Teacher',
-        
-        # Primary School (General)
-        'Primary School Teacher',
+        # Optimized for speed - 3 most common NZ teaching job titles
         'Primary Teacher',
-        'Elementary Teacher',
-        
-        # NZ-specific terms
-        'Years 1-4 Teacher',
-        'New Entrant Teacher',
-        'Junior School Teacher'
+        'Junior Primary Teacher',
+        'New Entrant Teacher'
     ],
     'location': 'New Zealand',
-    'max_jobs_per_search': 10,  # Start small for testing
-    'platforms': ['linkedin', 'seek'],  # Education Gazette ready but currently blocked by anti-bot protection  
+    'max_jobs_per_search': 15,  # 5 jobs per keyword = 15 total
+    'platforms': ['seek'],  # LinkedIn requires payment, Seek works fine
     'remote_ok': False,
     'salary_min': None,
     'auto_apply_enabled': True,  
