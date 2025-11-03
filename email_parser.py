@@ -7,12 +7,9 @@ def should_auto_reject(job_title: str) -> tuple[bool, Optional[str]]:
     """
     Check if a job should be auto-rejected based on title.
     Returns (should_reject, reason)
+    
+    Currently disabled - all jobs are analyzed by AI.
     """
-    title_lower = job_title.lower()
-    
-    if 'visa sponsorship' in title_lower or 'sponsorship' in title_lower:
-        return True, 'auto-rejected - sponsorship in title'
-    
     return False, None
 
 def clean_text(text: str) -> str:
