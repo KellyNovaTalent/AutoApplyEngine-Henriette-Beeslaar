@@ -13,6 +13,34 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 TOKEN_PATH = 'token.json'
 CREDENTIALS_PATH = 'credentials.json'
 
+_flow_instance = None
+
+def get_auth_url():
+    """Get the authorization URL for Gmail OAuth."""
+    global _flow_instance
+    if not os.path.exists(CREDENTIALS_PATH):
+        return None
+    
+    _flow_instance = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+    _flow_instance.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
+    auth_url, _ = _flow_instance.authorization_url(prompt='consent')
+    return auth_url
+
+def complete_auth(auth_code):
+    """Complete the OAuth flow with the authorization code."""
+    global _flow_instance
+    if not _flow_instance:
+        raise Exception("Auth flow not started. Please try syncing again.")
+    
+    _flow_instance.fetch_token(code=auth_code)
+    creds = _flow_instance.credentials
+    
+    with open(TOKEN_PATH, 'w') as token:
+        token.write(creds.to_json())
+    
+    _flow_instance = None
+    return True
+
 def get_gmail_service():
     """Authenticate and return Gmail API service."""
     creds = None
@@ -30,7 +58,11 @@ def get_gmail_service():
                     "Please download it from Google Cloud Console."
                 )
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=0)
+            flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
+            
+            auth_url, _ = flow.authorization_url(prompt='consent')
+            
+            raise Exception(f"AUTHORIZATION_REQUIRED|||{auth_url}")
         
         with open(TOKEN_PATH, 'w') as token:
             token.write(creds.to_json())

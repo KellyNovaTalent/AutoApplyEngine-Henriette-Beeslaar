@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, get_all_jobs, get_job_stats, update_job_status
-from gmail_service import process_job_emails
+from gmail_service import process_job_emails, get_auth_url, complete_auth
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -68,8 +68,38 @@ def index():
 @app.route('/api/sync', methods=['POST'])
 @login_required
 def sync_emails():
-    result = process_job_emails()
-    return jsonify(result)
+    try:
+        result = process_job_emails()
+        return jsonify(result)
+    except Exception as e:
+        error_msg = str(e)
+        if 'AUTHORIZATION_REQUIRED|||' in error_msg:
+            auth_url = error_msg.split('|||')[1]
+            return jsonify({
+                'success': False,
+                'error': 'authorization_required',
+                'auth_url': auth_url
+            })
+        return jsonify({
+            'success': False,
+            'error': error_msg
+        })
+
+@app.route('/api/auth/complete', methods=['POST'])
+@login_required
+def complete_authorization():
+    data = request.get_json()
+    auth_code = data.get('code')
+    
+    if not auth_code:
+        return jsonify({'success': False, 'error': 'No authorization code provided'})
+    
+    try:
+        complete_auth(auth_code)
+        result = process_job_emails()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/jobs/<int:job_id>/update', methods=['POST'])
 @login_required

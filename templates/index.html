@@ -194,17 +194,77 @@
                     if (data.success) {
                         alert(`✅ Sync complete!\n\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
                         window.location.reload();
+                    } else if (data.error === 'authorization_required') {
+                        handleAuthorization(data.auth_url);
                     } else {
                         alert('❌ Error: ' + (data.error || 'Unknown error'));
+                        btn.disabled = false;
+                        text.textContent = '🔄 Sync Emails';
                     }
                 })
                 .catch(error => {
                     alert('❌ Error syncing emails: ' + error);
-                })
-                .finally(() => {
                     btn.disabled = false;
                     text.textContent = '🔄 Sync Emails';
                 });
+        }
+        
+        function handleAuthorization(authUrl) {
+            const btn = document.getElementById('syncBtn');
+            const text = document.getElementById('syncText');
+            
+            const message = `🔐 Gmail Authorization Required\n\n` +
+                          `To sync your job alert emails, you need to authorize this app.\n\n` +
+                          `Steps:\n` +
+                          `1. Click OK to open the Google authorization page\n` +
+                          `2. Sign in with your Gmail account\n` +
+                          `3. Click "Allow" to grant read-only email access\n` +
+                          `4. Copy the authorization code from the page\n` +
+                          `5. Paste it in the next prompt\n\n` +
+                          `Ready to authorize?`;
+            
+            if (!confirm(message)) {
+                btn.disabled = false;
+                text.textContent = '🔄 Sync Emails';
+                return;
+            }
+            
+            window.open(authUrl, '_blank');
+            
+            setTimeout(() => {
+                const code = prompt('📋 Please paste the authorization code from Google:');
+                
+                if (!code) {
+                    alert('❌ No code provided. Please try syncing again.');
+                    btn.disabled = false;
+                    text.textContent = '🔄 Sync Emails';
+                    return;
+                }
+                
+                text.textContent = '⏳ Completing authorization...';
+                
+                fetch('/api/auth/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code.trim() })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`✅ Authorization successful!\n\nSync complete!\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
+                            window.location.reload();
+                        } else {
+                            alert('❌ Error: ' + (data.error || 'Unknown error'));
+                            btn.disabled = false;
+                            text.textContent = '🔄 Sync Emails';
+                        }
+                    })
+                    .catch(error => {
+                        alert('❌ Error completing authorization: ' + error);
+                        btn.disabled = false;
+                        text.textContent = '🔄 Sync Emails';
+                    });
+            }, 2000);
         }
     </script>
 </body>
