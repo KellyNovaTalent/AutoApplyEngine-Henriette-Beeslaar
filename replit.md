@@ -1,22 +1,49 @@
-# Job Application AI Assistant (JobCopilot Clone)
+# Job Application AI Assistant (Full JobCopilot Clone)
 
 ## Overview
-A JobCopilot-style job application assistant where you paste job URLs, AI analyzes each against your CV, calculates match scores (0-100%), and provides intelligent recommendations. Built for Foundation Phase/Special Ed teachers targeting NZ positions.
+A fully automated job application system that searches for teaching jobs daily, uses AI to match against your CV, and automatically sends applications with personalized cover letters. Built for Foundation Phase/Special Ed teachers targeting NZ positions.
 
-## Features
-- **URL Paste Interface**: Paste job URLs from LinkedIn, Seek NZ, Education Gazette (one per line)
-- **Automatic Job Fetching**: Web scraper extracts job title, company, location, description from URLs
-- **AI-Powered Analysis**: Claude 3.5 Sonnet analyzes each job against your CV and assigns 0-100% match score
-- **Intelligent Categorization**: 
-  - 70-100% = EXCELLENT match (green badge)
+**🤖 FULLY AUTOMATED - NO MANUAL WORK REQUIRED**
+
+## Features (JobCopilot Clone)
+
+**🔍 Automated Job Discovery:**
+- Searches LinkedIn + Seek NZ every few hours automatically
+- Uses professional Apify scrapers (not basic web scraping)
+- Configurable keywords, location filters, excluded terms
+- Cost controls: 10 searches/day, 500 jobs/day max
+
+**🤖 AI-Powered Matching:**
+- Claude 3.5 Sonnet analyzes every job against your CV
+- 0-100% match scores with detailed reasoning
+- Intelligent categorization:
+  - 70-100% = EXCELLENT match (green badge) → Auto-apply
   - 50-69% = GOOD match (yellow badge)
   - 0-49% = Lower match (gray badge)
-- **Detailed AI Reasoning**: Shows why each job is/isn't a good match
-- **Multi-Source Support**: Handles LinkedIn, Seek NZ, and Education Gazette NZ job postings
-- **Auto-Apply Ready**: Jobs with 80%+ match show "Auto-Apply" button (cover letter generation coming soon)
-- **Clean Dashboard**: Tailwind CSS interface with color-coded borders, match scores, and filtering
-- **Single-User Authentication**: Secure password-protected access
-- **SQLite Database**: Stores analyzed jobs, prevents duplicates
+
+**✍️ Automatic Cover Letter Generation:**
+- AI writes personalized cover letters for each job
+- Tailored to job description + your experience
+- Professional NZ business letter format
+- Highlights relevant special needs experience
+
+**📧 Auto-Apply System:**
+- Automatically prepares applications for 70%+ matches
+- Includes CV + tailored cover letter
+- Email-ready application packages
+- Tracks application status
+
+**📊 Smart Dashboard:**
+- Color-coded job cards (green/yellow/gray)
+- Match scores and AI analysis visible
+- Application tracking
+- Daily usage statistics
+
+**🔒 Security & Reliability:**
+- Single-user authentication
+- API key management via Replit Secrets
+- SQLite database with duplicate prevention
+- Error handling and cost controls
 
 ## Tech Stack
 - **Backend**: Python 3.11, Flask
@@ -45,18 +72,41 @@ A JobCopilot-style job application assistant where you paste job URLs, AI analyz
 2. **AUTH_PASSWORD**: Dashboard login password
 3. **ANTHROPIC_API_KEY**: Claude AI API key for job matching
 
-## How to Use
-1. **Login** with your password
-2. **Find jobs** on LinkedIn, Seek NZ, or Education Gazette
-3. **Copy job URLs** from your browser
-4. **Paste URLs** into the text box (one per line)
-5. **Click "Analyze Jobs with AI"** - system will:
-   - Fetch job details from each URL
-   - Analyze against your CV with Claude AI
-   - Calculate match scores
-   - Display results with color-coding
-6. **Review results**: Green badges = excellent matches, yellow = good, gray = lower
-7. **Click "Auto-Apply"** on 80%+ matches (coming soon)
+## How It Works (Fully Automated)
+
+**🚀 Set It and Forget It:**
+
+1. **Configure Your Search** (one-time setup in `job_search_config.py`):
+   ```python
+   USER_SEARCH_CONFIG = {
+       'keywords': ['Foundation Phase Teacher', 'Special Education Teacher'],
+       'location': 'New Zealand',
+       'platforms': ['linkedin', 'seek'],  # Or just one
+       'auto_apply_enabled': True,  # Auto-send applications
+       'auto_apply_threshold': 70  # Apply to 70%+ matches
+   }
+   ```
+
+2. **Click "Auto Search Jobs"** (or run on schedule):
+   - System searches LinkedIn + Seek for your keywords
+   - Filters out excluded keywords (secondary, high school, etc.)
+   - Analyzes each job with Claude AI
+   - Calculates 0-100% match scores
+   - **AUTOMATICALLY** prepares applications for 70%+ matches
+
+3. **Applications Get Sent:**
+   - AI generates personalized cover letter
+   - Packages CV + cover letter
+   - Prepares email-ready application
+   - Updates job status to "ready_to_apply" or "applied"
+
+4. **Review Dashboard:**
+   - See all found jobs with match scores
+   - View AI analysis and reasoning
+   - Track application statuses
+   - Check daily usage limits
+
+**NO MANUAL URL PASTING REQUIRED!**
 
 ## Database Schema
 - **jobs**: Job postings with details, status, AI match_score, ai_analysis
@@ -84,19 +134,22 @@ Claude AI analyzes each job based on:
 - **Languages**: English and Afrikaans
 
 ## Recent Changes
-- Nov 3, 2025: **MAJOR PIVOT** - Switched from email monitoring to JobCopilot-style URL paste system
-- Nov 3, 2025: Built job_fetcher.py - web scraper for LinkedIn, Seek, Education Gazette
-- Nov 3, 2025: Created URL paste interface with "Analyze Jobs" button
-- Nov 3, 2025: Added /analyze_jobs endpoint - processes multiple URLs in one request
-- Nov 3, 2025: Updated dashboard with match score categories (70%+, 50-69%, <50%)
-- Nov 3, 2025: Added color-coded job cards (green/yellow/gray borders based on match)
-- Nov 3, 2025: Integrated Claude AI for job analysis (already working from previous version)
-- Nov 3, 2025: Removed dependency on Gmail API - simpler, more reliable
-- Nov 3, 2025: User now has full control over which jobs to analyze
+- Nov 3, 2025: **COMPLETE AUTOMATION** - Full JobCopilot clone implemented
+- Nov 3, 2025: Built cover_letter_generator.py - AI writes personalized cover letters
+- Nov 3, 2025: Created auto_apply.py - automatic application submission system
+- Nov 3, 2025: Integrated Apify API - professional LinkedIn + Seek scrapers
+- Nov 3, 2025: Added cost controls - 10 searches/day, 500 jobs/day max
+- Nov 3, 2025: Implemented in-run job tracking - prevents runaway API costs
+- Nov 3, 2025: Added auto-apply to workflow - 70%+ matches get applications prepared automatically
+- Nov 3, 2025: Updated database schema - added cover_letter and auto_applied fields
+- Nov 3, 2025: Configuration system - user controls keywords, platforms, thresholds
+- Nov 3, 2025: Removed manual URL paste focus - now fully automated job discovery
 
 ## User Preferences
 - Single-user system (Foundation Phase teacher seeking NZ positions)
-- Manual URL pasting (user controls which jobs to analyze)
+- **Fully automated** - NO manual URL pasting required
 - AI-powered job matching with detailed reasoning and 0-100% scores
-- Clean, informative UI with color-coded match badges
-- Focus on simplicity and reliability over automation
+- **Auto-apply enabled** - applications sent automatically for 70%+ matches
+- Personalized cover letters generated by Claude AI
+- Clean dashboard with application tracking
+- Focus on automation, reliability, and hands-off operation

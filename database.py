@@ -37,6 +37,10 @@ def init_db():
     columns = [column[1] for column in cursor.fetchall()]
     if 'ai_analysis' not in columns:
         cursor.execute('ALTER TABLE jobs ADD COLUMN ai_analysis TEXT')
+    if 'cover_letter' not in columns:
+        cursor.execute('ALTER TABLE jobs ADD COLUMN cover_letter TEXT')
+    if 'auto_applied' not in columns:
+        cursor.execute('ALTER TABLE jobs ADD COLUMN auto_applied BOOLEAN DEFAULT 0')
     
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS email_tracking (

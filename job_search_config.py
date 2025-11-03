@@ -15,11 +15,11 @@ USER_SEARCH_CONFIG = {
     'location': 'New Zealand',
     'max_jobs_per_search': 50,
     'platforms': ['linkedin', 'seek'],  
-    'remote_ok': True,
+    'remote_ok': False,
     'salary_min': None,
-    'auto_apply_enabled': False,  
-    'auto_apply_threshold': 80,  
-    'review_mode': True  
+    'auto_apply_enabled': True,  
+    'auto_apply_threshold': 70,  
+    'review_mode': False  
 }
 
 EXCLUDED_KEYWORDS = [

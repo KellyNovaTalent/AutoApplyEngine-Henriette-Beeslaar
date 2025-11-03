@@ -86,3 +86,27 @@ JOB_PREFERENCES = {
     'grade_levels': 'Grades R-7 (Early Childhood through Junior Primary)',
     'qualifications': 'B.Ed Foundation Phase, NZ Teaching Registration'
 }
+
+USER_PROFILE = {
+    'name': 'Henriëtte Charlotte Beeslaar',
+    'email': 'henriettebeeslaar@gmail.com',
+    'phone': '',
+    'experience_years': 18,
+    'specialization': 'Foundation Phase and Special Education',
+    'qualifications': [
+        'Bachelor of Education (Foundation Phase)',
+        'NZ Teaching Registration',
+        'Makaton Certification',
+        'Sign Language (Module 1 & 2)'
+    ],
+    'key_skills': [
+        'Special Educational Needs (Autism, Down Syndrome, ADHD, Intellectual Disabilities)',
+        'Inclusive Education',
+        'Curriculum Adaptation (CAPS, DCAPS)',
+        'Behavior Modification',
+        'Early Childhood Development',
+        'Learning Support'
+    ],
+    'languages': ['English', 'Afrikaans'],
+    'cv_path': 'henriette_beeslaar_cv.pdf'
+}

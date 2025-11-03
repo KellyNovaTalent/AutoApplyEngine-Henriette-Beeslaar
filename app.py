@@ -9,6 +9,7 @@ from job_fetcher_apify import search_jobs_apify, fetch_job_from_url_apify
 from ai_matcher import analyze_job_match
 from job_search_config import USER_SEARCH_CONFIG, EXCLUDED_KEYWORDS
 from apify_cost_tracker import can_make_search, can_fetch_jobs, record_search, get_usage_stats
+from auto_apply import auto_apply_to_job, should_auto_apply
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -274,9 +275,19 @@ def auto_search_jobs():
                 # Insert into database
                 job_id = insert_job(job_data)
                 if job_id:
+                    job_data['id'] = job_id
                     total_new_jobs += 1
                     all_jobs_found.append(job_data)
                     print(f"   💾 Saved (ID: {job_id})")
+                    
+                    # Auto-apply if match score is high enough
+                    if should_auto_apply(job_data):
+                        print(f"   🎯 Match score {job_data['match_score']}% - attempting auto-apply")
+                        apply_result = auto_apply_to_job(job_data)
+                        if apply_result['success']:
+                            print(f"   ✅ Application prepared")
+                        else:
+                            print(f"   ⏭️  Auto-apply skipped: {apply_result.get('reason', 'Unknown')}")
         
         # Record usage (only record once at the end)
         record_search(jobs_fetched_this_run)
