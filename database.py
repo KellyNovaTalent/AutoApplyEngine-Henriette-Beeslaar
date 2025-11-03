@@ -178,6 +178,16 @@ def get_job_stats() -> Dict[str, Any]:
     cursor.execute("SELECT source_platform, COUNT(*) FROM jobs GROUP BY source_platform")
     by_platform = dict(cursor.fetchall())
     
+    # Match score categories
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE match_score >= 70")
+    high_matches = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE match_score >= 50 AND match_score < 70")
+    medium_matches = cursor.fetchone()[0]
+    
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE match_score < 50 OR match_score IS NULL")
+    low_matches = cursor.fetchone()[0]
+    
     conn.close()
     
     return {
@@ -185,7 +195,10 @@ def get_job_stats() -> Dict[str, Any]:
         'auto_rejected': auto_rejected,
         'applied': applied,
         'new_jobs': new_jobs,
-        'by_platform': by_platform
+        'by_platform': by_platform,
+        'high_matches': high_matches,
+        'medium_matches': medium_matches,
+        'low_matches': low_matches
     }
 
 def update_job_status(job_id: int, status: str, notes: Optional[str] = None):

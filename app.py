@@ -2,8 +2,10 @@ import os
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
-from database import init_db, get_all_jobs, get_job_stats, update_job_status
+from database import init_db, get_all_jobs, get_job_stats, update_job_status, insert_job
 from gmail_service import process_job_emails, complete_auth_with_code
+from job_fetcher import fetch_job_from_url
+from ai_matcher import analyze_job_match
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -101,6 +103,84 @@ def complete_authorization():
         return jsonify(result)
     except Exception as e:
         print(f"Authorization error: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/analyze_jobs', methods=['POST'])
+@login_required
+def analyze_jobs():
+    """Analyze job URLs pasted by user."""
+    try:
+        data = request.get_json()
+        urls_text = data.get('urls', '')
+        
+        # Parse URLs from text (one per line)
+        import re
+        urls = [line.strip() for line in urls_text.split('\n') if line.strip()]
+        
+        # Filter valid URLs
+        valid_urls = [url for url in urls if url.startswith('http')]
+        
+        if not valid_urls:
+            return jsonify({'success': False, 'error': 'No valid URLs provided'})
+        
+        print(f"\n{'='*80}")
+        print(f"🔍 Analyzing {len(valid_urls)} job URLs")
+        print(f"{'='*80}")
+        
+        jobs_analyzed = 0
+        jobs_failed = 0
+        
+        for url in valid_urls:
+            print(f"\n📋 Fetching: {url[:60]}...")
+            
+            # Fetch job details from URL
+            job_data = fetch_job_from_url(url)
+            
+            if not job_data:
+                print(f"   ❌ Failed to fetch job")
+                jobs_failed += 1
+                continue
+            
+            print(f"   ✅ Fetched: {job_data['job_title']}")
+            print(f"   🏢 Company: {job_data['company_name']}")
+            
+            # Analyze with AI
+            print(f"   🤖 Analyzing with Claude AI...")
+            ai_result = analyze_job_match(job_data)
+            job_data['match_score'] = ai_result['match_score']
+            job_data['ai_analysis'] = ai_result['analysis']
+            job_data['status'] = 'new'
+            job_data['rejection_reason'] = None
+            job_data['email_id'] = None
+            
+            print(f"   ✨ Match Score: {ai_result['match_score']}%")
+            
+            # Insert into database
+            job_id = insert_job(job_data)
+            if job_id:
+                jobs_analyzed += 1
+                print(f"   💾 Saved to database (ID: {job_id})")
+            else:
+                print(f"   ⏭️  Duplicate job (already in database)")
+                jobs_analyzed += 1  # Count as analyzed even if duplicate
+        
+        print(f"\n{'='*80}")
+        print(f"✅ Analysis Complete!")
+        print(f"   Analyzed: {jobs_analyzed}/{len(valid_urls)}")
+        print(f"   Failed: {jobs_failed}/{len(valid_urls)}")
+        print(f"{'='*80}\n")
+        
+        return jsonify({
+            'success': True,
+            'jobs_analyzed': jobs_analyzed,
+            'jobs_failed': jobs_failed,
+            'total_urls': len(valid_urls)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error analyzing jobs: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/jobs/<int:job_id>/update', methods=['POST'])

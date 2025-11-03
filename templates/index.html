@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Dashboard</title>
+    <title>Job Application AI Assistant</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -11,16 +11,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-gray-900">📧 Job Application System</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">🤖 Job Application AI Assistant</h1>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button 
-                        onclick="syncEmails()" 
-                        id="syncBtn"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-                    >
-                        <span id="syncText">🔄 Sync Emails</span>
-                    </button>
                     <a href="/logout" class="text-gray-600 hover:text-gray-900">Logout</a>
                 </div>
             </div>
@@ -28,75 +21,82 @@
     </nav>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Authorization Code Input (hidden by default) -->
-        <div id="authCodeSection" class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg shadow mb-6" style="display: none;">
-            <h2 class="text-xl font-bold text-yellow-800 mb-3">🔐 Gmail Authorization Required</h2>
-            <p class="text-gray-700 mb-4">
-                A new tab should have opened with Google's authorization page. After you sign in and allow access, 
-                Google will show you an authorization code. Paste that code below:
-            </p>
-            <div class="flex gap-3">
-                <input 
-                    type="text" 
-                    id="authCodeInput" 
-                    placeholder="Paste authorization code here (e.g., 4/1Ab32j93y...)"
-                    class="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button 
-                    onclick="submitAuthCode()" 
-                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded"
-                >
-                    Submit Code
-                </button>
-                <button 
-                    onclick="hideAuthSection()" 
-                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded"
-                >
-                    Cancel
-                </button>
+        <!-- URL Paste Section -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-lg p-8 mb-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Paste Job URLs for AI Analysis</h2>
+            <p class="text-gray-700 mb-4">Paste job URLs from LinkedIn, Seek NZ, or Education Gazette (one per line). AI will analyze each job against your CV and calculate match scores.</p>
+            
+            <form id="analyzeForm" onsubmit="analyzeJobs(event)">
+                <textarea 
+                    id="jobUrls" 
+                    rows="6" 
+                    placeholder="https://www.linkedin.com/jobs/view/123456&#10;https://www.seek.co.nz/job/654321&#10;https://gazette.education.govt.nz/vacancies/..."
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                ></textarea>
+                
+                <div class="flex justify-between items-center mt-4">
+                    <div class="text-sm text-gray-600">
+                        💡 Tip: Copy job URLs directly from your browser
+                    </div>
+                    <button 
+                        type="submit" 
+                        id="analyzeBtn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg inline-flex items-center text-lg shadow-md"
+                    >
+                        <span id="analyzeText">🔍 Analyze Jobs with AI</span>
+                    </button>
+                </div>
+            </form>
+
+            <div id="analysisProgress" class="mt-4 hidden">
+                <div class="bg-white rounded-lg p-4 border-2 border-blue-200">
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                        <span class="text-gray-700 font-medium" id="progressText">Analyzing jobs...</span>
+                    </div>
+                </div>
             </div>
-            <p class="text-sm text-gray-600 mt-3">
-                💡 Don't see the authorization page? <a id="authUrlLink" href="#" target="_blank" class="text-blue-600 underline">Click here to open it</a>
-            </p>
         </div>
 
+        <!-- Statistics -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-sm text-gray-600">Total Jobs</div>
                 <div class="text-3xl font-bold text-gray-900">{{ stats.total_jobs }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">New Jobs</div>
-                <div class="text-3xl font-bold text-blue-600">{{ stats.new_jobs }}</div>
+                <div class="text-sm text-gray-600">Excellent Matches (70%+)</div>
+                <div class="text-3xl font-bold text-green-600">{{ stats.high_matches }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Applied</div>
-                <div class="text-3xl font-bold text-green-600">{{ stats.applied }}</div>
+                <div class="text-sm text-gray-600">Good Matches (50-69%)</div>
+                <div class="text-3xl font-bold text-yellow-600">{{ stats.medium_matches }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm text-gray-600">Auto-Rejected</div>
-                <div class="text-3xl font-bold text-red-600">{{ stats.auto_rejected }}</div>
+                <div class="text-sm text-gray-600">Lower Matches (<50%)</div>
+                <div class="text-3xl font-bold text-gray-600">{{ stats.low_matches }}</div>
             </div>
         </div>
 
+        <!-- Filters -->
         <div class="bg-white rounded-lg shadow mb-6 p-4">
             <form method="GET" class="flex flex-wrap gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                    <select name="source" class="border border-gray-300 rounded px-3 py-2">
-                        <option value="all" {% if not filters.source or filters.source == 'all' %}selected{% endif %}>All Sources</option>
-                        <option value="LinkedIn" {% if filters.source == 'LinkedIn' %}selected{% endif %}>LinkedIn</option>
-                        <option value="Seek NZ" {% if filters.source == 'Seek NZ' %}selected{% endif %}>Seek NZ</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Match Score</label>
+                    <select name="match" class="border border-gray-300 rounded px-3 py-2">
+                        <option value="all">All Matches</option>
+                        <option value="high">Excellent (70%+)</option>
+                        <option value="medium">Good (50-69%)</option>
+                        <option value="low">Lower (<50%)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" class="border border-gray-300 rounded px-3 py-2">
-                        <option value="all" {% if not filters.status or filters.status == 'all' %}selected{% endif %}>All Status</option>
-                        <option value="new" {% if filters.status == 'new' %}selected{% endif %}>New</option>
-                        <option value="analyzing" {% if filters.status == 'analyzing' %}selected{% endif %}>Analyzing</option>
-                        <option value="applied" {% if filters.status == 'applied' %}selected{% endif %}>Applied</option>
-                        <option value="auto-rejected" {% if filters.status == 'auto-rejected' %}selected{% endif %}>Auto-Rejected</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <select name="source" class="border border-gray-300 rounded px-3 py-2">
+                        <option value="all">All Sources</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Seek NZ">Seek NZ</option>
+                        <option value="Education Gazette NZ">Education Gazette</option>
                     </select>
                 </div>
                 <div class="flex items-end">
@@ -107,98 +107,64 @@
             </form>
         </div>
 
+        <!-- Jobs List -->
         <div id="jobsList" class="space-y-4">
             {% for job in jobs %}
-            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow border-l-4 
+                {% if job.match_score >= 70 %}border-green-500
+                {% elif job.match_score >= 50 %}border-yellow-500
+                {% else %}border-gray-300{% endif %}">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
-                        <div class="flex items-center gap-2 mb-2">
+                        <div class="flex items-center gap-3 mb-2">
                             <h2 class="text-xl font-bold text-gray-900">{{ job.job_title }}</h2>
-                            {% if job.source_platform == 'LinkedIn' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                LinkedIn
-                            </span>
-                            {% elif job.source_platform == 'Seek NZ' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                Seek NZ
+                            
+                            <!-- Match Score Badge -->
+                            {% if job.match_score %}
+                            <span class="px-3 py-1 text-sm font-bold rounded-full
+                                {% if job.match_score >= 70 %}bg-green-100 text-green-800
+                                {% elif job.match_score >= 50 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ job.match_score }}% Match
                             </span>
                             {% endif %}
                             
-                            {% if job.status == 'new' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                New
+                            <!-- Source Badge -->
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                {% if job.source_platform == 'LinkedIn' %}bg-blue-100 text-blue-800
+                                {% elif job.source_platform == 'Seek NZ' %}bg-green-100 text-green-800
+                                {% else %}bg-purple-100 text-purple-800{% endif %}">
+                                {{ job.source_platform }}
                             </span>
-                            {% elif job.status == 'applied' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                Applied
-                            </span>
-                            {% elif job.status == 'auto-rejected' %}
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                Auto-Rejected
-                            </span>
-                            {% endif %}
                         </div>
                         
-                        <div class="text-gray-600 mb-2">
-                            <span class="font-semibold">{{ job.company_name }}</span>
-                            {% if job.location %}
-                            <span class="mx-2">•</span>
-                            <span>{{ job.location }}</span>
-                            {% endif %}
-                            {% if job.salary_info %}
-                            <span class="mx-2">•</span>
-                            <span class="text-green-600 font-medium">{{ job.salary_info }}</span>
-                            {% endif %}
-                        </div>
+                        <p class="text-gray-700 font-medium mb-2">{{ job.company_name }}</p>
+                        <p class="text-gray-600 text-sm mb-3">📍 {{ job.location }}</p>
                         
-                        {% if job.match_score > 0 %}
-                        <div class="mb-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                {% if job.match_score >= 70 %}
-                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-green-100 text-green-800">
-                                    🎯 {{ job.match_score }}% Match - EXCELLENT
-                                </span>
-                                {% elif job.match_score >= 50 %}
-                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-yellow-100 text-yellow-800">
-                                    🎯 {{ job.match_score }}% Match - GOOD
-                                </span>
-                                {% else %}
-                                <span class="px-3 py-1 text-sm font-bold rounded-full bg-gray-100 text-gray-800">
-                                    🎯 {{ job.match_score }}% Match
-                                </span>
-                                {% endif %}
-                            </div>
-                            {% if job.ai_analysis %}
-                            <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mt-2">
-                                <p class="text-blue-900 text-sm"><strong>AI Analysis:</strong> {{ job.ai_analysis }}</p>
-                            </div>
-                            {% endif %}
+                        {% if job.ai_analysis %}
+                        <div class="bg-blue-50 rounded-lg p-4 mb-3">
+                            <h3 class="font-semibold text-gray-900 mb-2">🤖 AI Analysis:</h3>
+                            <p class="text-gray-700 text-sm whitespace-pre-line">{{ job.ai_analysis }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if job.description %}
-                        <p class="text-gray-700 text-sm mb-3">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
-                        {% endif %}
-                        
-                        {% if job.rejection_reason %}
-                        <div class="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
-                            <p class="text-red-700 text-sm">{{ job.rejection_reason }}</p>
-                        </div>
-                        {% endif %}
-                        
-                        <div class="flex items-center gap-4 text-sm text-gray-500">
-                            <span>📅 {{ job.date_received[:10] }}</span>
+                        <div class="flex gap-2 mt-4">
+                            <a href="{{ job.job_url }}" target="_blank" 
+                               class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center text-sm">
+                                View Job →
+                            </a>
+                            
+                            {% if job.match_score and job.match_score >= 80 %}
+                            <button onclick="generateCoverLetter({{ job.id }})" 
+                                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center text-sm">
+                                ✨ Auto-Apply
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                     
-                    <div class="ml-4">
-                        <a 
-                            href="{{ job.job_url }}" 
-                            target="_blank" 
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block mb-2"
-                        >
-                            View Job
-                        </a>
+                    <div class="text-right text-sm text-gray-500">
+                        {{ job.posted_date }}
                     </div>
                 </div>
             </div>
@@ -206,91 +172,67 @@
             
             {% if not jobs %}
             <div class="bg-white rounded-lg shadow p-12 text-center">
-                <p class="text-gray-500 text-lg">No jobs found. Click "Sync Emails" to fetch new job alerts.</p>
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">No Jobs Yet</h3>
+                <p class="text-gray-600">Paste job URLs above and click "Analyze Jobs with AI" to get started!</p>
             </div>
             {% endif %}
         </div>
     </div>
 
     <script>
-        function syncEmails() {
-            const btn = document.getElementById('syncBtn');
-            const text = document.getElementById('syncText');
+        async function analyzeJobs(event) {
+            event.preventDefault();
             
-            btn.disabled = true;
-            text.textContent = '⏳ Syncing...';
-            
-            fetch('/api/sync', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(`✅ Sync complete!\n\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
-                        window.location.reload();
-                    } else if (data.error === 'authorization_required') {
-                        showAuthSection(data.auth_url);
-                    } else {
-                        alert('❌ Error: ' + (data.error || 'Unknown error'));
-                        btn.disabled = false;
-                        text.textContent = '🔄 Sync Emails';
-                    }
-                })
-                .catch(error => {
-                    alert('❌ Error syncing emails: ' + error);
-                    btn.disabled = false;
-                    text.textContent = '🔄 Sync Emails';
-                });
-        }
-        
-        function showAuthSection(authUrl) {
-            document.getElementById('authCodeSection').style.display = 'block';
-            document.getElementById('authUrlLink').href = authUrl;
-            document.getElementById('authCodeInput').value = '';
-            window.open(authUrl, '_blank');
-            document.getElementById('authCodeInput').focus();
-        }
-        
-        function hideAuthSection() {
-            document.getElementById('authCodeSection').style.display = 'none';
-            const btn = document.getElementById('syncBtn');
-            const text = document.getElementById('syncText');
-            btn.disabled = false;
-            text.textContent = '🔄 Sync Emails';
-        }
-        
-        function submitAuthCode() {
-            const code = document.getElementById('authCodeInput').value.trim();
-            const btn = document.getElementById('syncBtn');
-            const text = document.getElementById('syncText');
-            
-            if (!code) {
-                alert('❌ Please paste the authorization code first.');
+            const urls = document.getElementById('jobUrls').value.trim();
+            if (!urls) {
+                alert('Please paste at least one job URL');
                 return;
             }
             
-            text.textContent = '⏳ Completing authorization...';
+            const btn = document.getElementById('analyzeBtn');
+            const btnText = document.getElementById('analyzeText');
+            const progress = document.getElementById('analysisProgress');
+            const progressText = document.getElementById('progressText');
             
-            fetch('/api/auth/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        hideAuthSection();
-                        alert(`✅ Authorization successful!\n\nSync complete!\nTotal jobs: ${data.total_jobs}\nAuto-rejected: ${data.auto_rejected}\n\nRefreshing page...`);
-                        window.location.reload();
-                    } else {
-                        alert('❌ Error: ' + (data.error || 'Unknown error'));
-                        btn.disabled = false;
-                        text.textContent = '🔄 Sync Emails';
-                    }
-                })
-                .catch(error => {
-                    alert('❌ Error completing authorization: ' + error);
-                    btn.disabled = false;
-                    text.textContent = '🔄 Sync Emails';
+            btn.disabled = true;
+            btnText.textContent = '⏳ Analyzing...';
+            progress.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/analyze_jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ urls: urls })
                 });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Analyzed ${data.jobs_analyzed} jobs! Refreshing...`;
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to analyze jobs'));
+                    progress.classList.add('hidden');
+                    btn.disabled = false;
+                    btnText.textContent = '🔍 Analyze Jobs with AI';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+                btn.disabled = false;
+                btnText.textContent = '🔍 Analyze Jobs with AI';
+            }
+        }
+        
+        async function generateCoverLetter(jobId) {
+            if (!confirm('Generate cover letter and prepare application for this job?')) {
+                return;
+            }
+            
+            alert('Cover letter generation coming soon! This will use Claude AI to create a personalized cover letter based on your CV and the job description.');
         }
     </script>
 </body>
