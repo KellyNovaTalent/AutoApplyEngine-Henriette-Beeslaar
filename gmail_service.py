@@ -93,23 +93,28 @@ def get_email_headers(headers: List[Dict]) -> Dict[str, str]:
 def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30) -> List[Dict[str, Any]]:
     """
     Fetch job alert emails with FLEXIBLE detection from the last X days.
-    Searches for job-related keywords and URLs instead of strict sender matching.
+    Searches across ALL Gmail tabs (Primary, Promotions, Updates) using broad queries.
     """
     from datetime import datetime, timedelta
     
     # Calculate date filter (last 30 days)
     date_filter = (datetime.now() - timedelta(days=days_back)).strftime('%Y/%m/%d')
     
-    # MUCH MORE FLEXIBLE queries - look for job-related content anywhere
+    # BROAD queries to catch emails across all tabs - search by subject/content, not sender
     queries = [
-        # LinkedIn - any mention
-        f'(from:linkedin.com OR subject:linkedin OR body:linkedin.com/jobs) after:{date_filter}',
-        # Seek NZ - any mention
-        f'(from:seek.co.nz OR subject:seek OR body:seek.co.nz/job) after:{date_filter}',
-        # Education Gazette - multiple possible senders
-        f'(from:edgazette.govt.nz OR from:education.govt.nz OR from:gazette.education.govt.nz OR subject:"education gazette" OR body:edgazette.govt.nz) after:{date_filter}',
-        # Generic job alert keywords
-        f'(subject:"job alert" OR subject:"new jobs" OR subject:"job opportunity" OR subject:"teaching position" OR subject:"teacher vacancy") after:{date_filter}'
+        # LinkedIn - search by subject line patterns (handles bounce domains)
+        f'in:anywhere subject:"LinkedIn Job" after:{date_filter}',
+        f'in:anywhere subject:"jobs you may be interested" after:{date_filter}',
+        f'in:anywhere (subject:linkedin body:"linkedin.com/jobs") after:{date_filter}',
+        
+        # Seek NZ - search by subject patterns (handles marketing senders)
+        f'in:anywhere subject:"SEEK" after:{date_filter}',
+        f'in:anywhere (subject:seek body:"seek.co.nz/job") after:{date_filter}',
+        
+        # Education Gazette - flexible search
+        f'in:anywhere (from:govt.nz subject:gazette) after:{date_filter}',
+        f'in:anywhere (from:education.govt.nz OR from:edgazette.govt.nz) after:{date_filter}',
+        f'in:anywhere body:"gazette.education.govt.nz" after:{date_filter}',
     ]
     
     all_emails = []
@@ -117,7 +122,7 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
     
     for query in queries:
         try:
-            print(f"Searching: {query[:80]}...")
+            print(f"🔍 Searching: {query[:80]}...")
             results = service.users().messages().list(
                 userId='me',
                 q=query,
@@ -149,7 +154,8 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
                 email_subject = headers.get('Subject', '')
                 
                 # Log what we found
-                print(f"  📧 From: {email_from[:50]}, Subject: {email_subject[:50]}")
+                print(f"  📧 From: {email_from[:60]}")
+                print(f"      Subject: {email_subject[:60]}")
                 
                 all_emails.append({
                     'id': msg_id,
@@ -160,7 +166,7 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
                 })
                 
         except Exception as e:
-            print(f"Error fetching emails for query: {e}")
+            print(f"❌ Error fetching emails for query: {e}")
     
     print(f"\n✅ Total unique emails found: {len(all_emails)}")
     return all_emails
@@ -178,12 +184,16 @@ def process_job_emails():
         auto_rejected = 0
         
         for email in emails:
+            print(f"\n{'='*60}")
             jobs = parse_job_alert_email(
                 email['from'],
                 email['subject'],
                 email['body'],
                 email['id']
             )
+            
+            if not jobs:
+                print(f"   ⚠️ No jobs extracted from this email")
             
             for job in jobs:
                 if should_analyze_job(job):

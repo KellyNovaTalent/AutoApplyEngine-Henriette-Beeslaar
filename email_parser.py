@@ -294,23 +294,44 @@ def parse_education_gazette_email(email_body: str, email_id: str) -> List[Dict[s
 
 def parse_job_alert_email(email_from: str, email_subject: str, email_body: str, email_id: str) -> List[Dict[str, Any]]:
     """
-    Route email to appropriate parser based on sender.
+    Route email to appropriate parser based on sender AND content.
     Returns list of job dictionaries.
     """
     email_from_lower = email_from.lower()
+    email_subject_lower = email_subject.lower()
+    email_body_lower = email_body.lower()
     
-    if 'linkedin' in email_from_lower:
-        print(f"Parsing LinkedIn email: {email_subject}")
-        return parse_linkedin_email(email_body, email_id)
+    # Check for LinkedIn - by sender, subject, or content
+    if ('linkedin' in email_from_lower or 
+        'linkedin' in email_subject_lower or 
+        'linkedin.com/jobs' in email_body_lower):
+        print(f"📧 Parsing LinkedIn email: {email_subject[:60]}")
+        jobs = parse_linkedin_email(email_body, email_id)
+        print(f"   → Extracted {len(jobs)} LinkedIn jobs")
+        return jobs
     
-    elif 'seek.co.nz' in email_from_lower or 'seek' in email_from_lower:
-        print(f"Parsing Seek NZ email: {email_subject}")
-        return parse_seek_email(email_body, email_id)
+    # Check for Seek NZ - by sender, subject, or content
+    elif ('seek' in email_from_lower or 
+          'seek' in email_subject_lower or 
+          'seek.co.nz/job' in email_body_lower):
+        print(f"📧 Parsing Seek NZ email: {email_subject[:60]}")
+        jobs = parse_seek_email(email_body, email_id)
+        print(f"   → Extracted {len(jobs)} Seek jobs")
+        return jobs
     
-    elif 'gazette.education.govt.nz' in email_from_lower or 'education gazette' in email_from_lower:
-        print(f"Parsing Education Gazette NZ email: {email_subject}")
-        return parse_education_gazette_email(email_body, email_id)
+    # Check for Education Gazette - by sender, subject, or content
+    elif ('gazette.education.govt.nz' in email_from_lower or 
+          'education.govt.nz' in email_from_lower or
+          'edgazette' in email_from_lower or
+          'education gazette' in email_subject_lower or
+          'gazette.education.govt.nz' in email_body_lower):
+        print(f"📧 Parsing Education Gazette NZ email: {email_subject[:60]}")
+        jobs = parse_education_gazette_email(email_body, email_id)
+        print(f"   → Extracted {len(jobs)} Education Gazette jobs")
+        return jobs
     
     else:
-        print(f"Unknown job alert source: {email_from}")
+        print(f"⚠️  Unknown job alert source")
+        print(f"   From: {email_from[:60]}")
+        print(f"   Subject: {email_subject[:60]}")
         return []
