@@ -4,7 +4,6 @@ from functools import wraps
 from apscheduler.schedulers.background import BackgroundScheduler
 from database import init_db, get_all_jobs, get_job_stats, update_job_status, insert_job
 from gmail_service import process_job_emails, complete_auth_with_code
-from job_fetcher import fetch_job_from_url
 from job_fetcher_apify import search_jobs_apify, fetch_job_from_url_apify
 from ai_matcher import analyze_job_match
 from job_search_config import USER_SEARCH_CONFIG, EXCLUDED_KEYWORDS

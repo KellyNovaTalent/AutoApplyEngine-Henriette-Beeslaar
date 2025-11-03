@@ -144,10 +144,12 @@ Claude AI analyzes each job based on:
 - **Qualifications**: B.Ed Foundation Phase, NZ Teaching Registration
 - **Specializations**: Autism, Down Syndrome, ADHD, intellectual disabilities
 - **Target Location**: New Zealand
-- **Preferred Roles**: Foundation Phase, Primary School, Special Education, Learning Support
+- **Preferred Roles**: Foundation Phase (Grades R-3), Primary School (Junior Primary), ECD/Early Childhood, New Entrant Teacher
+- **Excluded Roles**: Secondary/Intermediate/Senior Phase (Grades 4+), Administrative positions
 - **Languages**: English and Afrikaans
 
 ## Recent Changes
+- Nov 3, 2025: Updated job search keywords - Focus ONLY on Foundation Phase (Grades R-3) and Junior Primary positions
 - Nov 3, 2025: **COMPLETE AUTOMATION** - Full JobCopilot clone implemented
 - Nov 3, 2025: Built cover_letter_generator.py - AI writes personalized cover letters
 - Nov 3, 2025: Created auto_apply.py - automatic application submission system

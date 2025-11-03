@@ -5,9 +5,6 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from email_parser import parse_job_alert_email
-from database import insert_job, email_processed, mark_email_processed
-from ai_matcher import analyze_job_match, should_analyze_job
 
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -223,67 +220,14 @@ def fetch_job_alert_emails(service, max_results: int = 100, days_back: int = 30)
     return all_emails
 
 def process_job_emails():
-    """Main function to process job alert emails."""
-    try:
-        service = get_gmail_service()
-        print("Connected to Gmail successfully")
-        
-        emails = fetch_job_alert_emails(service)
-        print(f"Found {len(emails)} job alert emails from the last 30 days")
-        
-        total_jobs = 0
-        auto_rejected = 0
-        
-        for email in emails:
-            print(f"\n{'='*60}")
-            jobs = parse_job_alert_email(
-                email['from'],
-                email['subject'],
-                email['body'],
-                email['id']
-            )
-            
-            if not jobs:
-                print(f"   ⚠️ No jobs extracted from this email")
-            
-            for job in jobs:
-                if should_analyze_job(job):
-                    print(f"  🤖 Analyzing with AI: {job['job_title']}")
-                    ai_result = analyze_job_match(job)
-                    job['match_score'] = ai_result['match_score']
-                    job['ai_analysis'] = ai_result['analysis']
-                
-                # Try to insert job (database will handle duplicates)
-                job_id = insert_job(job)
-                if job_id:
-                    total_jobs += 1
-                    if job['status'] == 'auto-rejected':
-                        auto_rejected += 1
-                        print(f"  ❌ Auto-rejected: {job['job_title']} - {job['rejection_reason']}")
-                    else:
-                        score = job.get('match_score', 0)
-                        print(f"  ✅ Added: {job['job_title']} at {job['company_name']} (Match: {score}%)")
-                else:
-                    print(f"  ⏭️  Skipped duplicate: {job['job_title']}")
-            
-            # Mark email as processed
-            if not email_processed(email['id']):
-                mark_email_processed(email['id'])
-        
-        print(f"\n📊 Summary:")
-        print(f"   Total jobs found: {total_jobs}")
-        print(f"   Auto-rejected (sponsorship): {auto_rejected}")
-        print(f"   Ready for review: {total_jobs - auto_rejected}")
-        
-        return {
-            'success': True,
-            'total_jobs': total_jobs,
-            'auto_rejected': auto_rejected
-        }
-        
-    except Exception as e:
-        print(f"Error processing job emails: {e}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
+    """
+    Email processing feature (deprecated - now using Apify automation).
+    Kept as stub for backward compatibility.
+    """
+    print("ℹ️  Email processing disabled - using Apify automated search instead")
+    return {
+        'success': True,
+        'total_jobs': 0,
+        'auto_rejected': 0,
+        'message': 'Email processing disabled - using Apify automation'
+    }
