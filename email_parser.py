@@ -32,6 +32,10 @@ def extract_url(text: str, platform: str) -> Optional[str]:
         match = re.search(r'https?://(?:www\.)?seek\.co\.nz/job/\d+', text)
         if match:
             return match.group(0)
+    elif platform == 'Education Gazette':
+        match = re.search(r'https?://(?:www\.)?gazette\.education\.govt\.nz/[^\s<>"]+', text)
+        if match:
+            return match.group(0)
     return None
 
 def parse_linkedin_email(email_body: str, email_id: str) -> List[Dict[str, Any]]:
@@ -187,6 +191,110 @@ def parse_seek_email(email_body: str, email_id: str) -> List[Dict[str, Any]]:
     
     return jobs
 
+def parse_education_gazette_email(email_body: str, email_id: str) -> List[Dict[str, Any]]:
+    """
+    Parse Education Gazette NZ job alert email and extract job details.
+    Education Gazette can send digest emails with multiple teaching positions.
+    """
+    jobs = []
+    soup = BeautifulSoup(email_body, 'html.parser')
+    
+    # Find all links to gazette job postings
+    gazette_links = soup.find_all('a', href=re.compile(r'gazette\.education\.govt\.nz'))
+    
+    if gazette_links:
+        # Multiple job listings in email
+        for link in gazette_links:
+            url = link.get('href', '')
+            if not url or 'unsubscribe' in url.lower() or 'subscription' in url.lower():
+                continue
+            
+            job_title = clean_text(link.get_text()) or 'Education Gazette Job'
+            
+            # Try to find company/school name near the link
+            parent = link.find_parent(['tr', 'td', 'div', 'p'])
+            company_name = 'Unknown School'
+            location = 'New Zealand'
+            description = ''
+            
+            if parent:
+                text_content = parent.get_text()
+                lines = [line.strip() for line in text_content.split('\n') if line.strip()]
+                
+                # Look for school/organization name
+                for i, line in enumerate(lines):
+                    if job_title in line and i + 1 < len(lines):
+                        company_name = lines[i + 1]
+                        break
+                
+                # Look for location
+                location_match = re.search(r'(?:Location:|in)\s*([^\n]+)', text_content, re.IGNORECASE)
+                if location_match:
+                    location = clean_text(location_match.group(1))
+                
+                # Extract description
+                description = clean_text(text_content)[:500]
+            
+            job_data = {
+                'job_title': job_title,
+                'company_name': company_name,
+                'location': location,
+                'description': description,
+                'job_url': url.split('?')[0],
+                'posted_date': datetime.now().strftime('%Y-%m-%d'),
+                'source_platform': 'Education Gazette NZ',
+                'salary_info': None,
+                'email_id': email_id,
+                'status': 'new',
+                'rejection_reason': None
+            }
+            
+            should_reject, reason = should_auto_reject(job_data['job_title'])
+            if should_reject:
+                job_data['status'] = 'auto-rejected'
+                job_data['rejection_reason'] = reason
+            
+            jobs.append(job_data)
+    else:
+        # Fallback: search for gazette URLs in plain text
+        text = soup.get_text()
+        urls = re.findall(r'https?://(?:www\.)?gazette\.education\.govt\.nz/[^\s<>"]+', text)
+        
+        for url in urls:
+            if 'unsubscribe' in url.lower() or 'subscription' in url.lower():
+                continue
+            
+            # Try to extract job title from nearby text
+            url_index = text.find(url)
+            context = text[max(0, url_index - 200):url_index]
+            
+            # Look for job title patterns
+            title_match = re.search(r'([A-Z][^.\n]{10,80}(?:Teacher|Principal|Coordinator|Manager|Tutor|Lecturer))', context)
+            job_title = title_match.group(1).strip() if title_match else 'Education Gazette Job'
+            
+            job_data = {
+                'job_title': job_title,
+                'company_name': 'Unknown School',
+                'location': 'New Zealand',
+                'description': '',
+                'job_url': url.split('?')[0],
+                'posted_date': datetime.now().strftime('%Y-%m-%d'),
+                'source_platform': 'Education Gazette NZ',
+                'salary_info': None,
+                'email_id': email_id,
+                'status': 'new',
+                'rejection_reason': None
+            }
+            
+            should_reject, reason = should_auto_reject(job_data['job_title'])
+            if should_reject:
+                job_data['status'] = 'auto-rejected'
+                job_data['rejection_reason'] = reason
+            
+            jobs.append(job_data)
+    
+    return jobs
+
 def parse_job_alert_email(email_from: str, email_subject: str, email_body: str, email_id: str) -> List[Dict[str, Any]]:
     """
     Route email to appropriate parser based on sender.
@@ -201,6 +309,10 @@ def parse_job_alert_email(email_from: str, email_subject: str, email_body: str, 
     elif 'seek.co.nz' in email_from_lower or 'seek' in email_from_lower:
         print(f"Parsing Seek NZ email: {email_subject}")
         return parse_seek_email(email_body, email_id)
+    
+    elif 'gazette.education.govt.nz' in email_from_lower or 'education gazette' in email_from_lower:
+        print(f"Parsing Education Gazette NZ email: {email_subject}")
+        return parse_education_gazette_email(email_body, email_id)
     
     else:
         print(f"Unknown job alert source: {email_from}")
