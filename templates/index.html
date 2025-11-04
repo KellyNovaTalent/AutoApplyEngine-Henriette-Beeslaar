@@ -85,7 +85,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Pending Review</p>
-                        <p class="text-3xl font-bold text-orange-600 mt-2">{{ stats.medium_matches }}</p>
+                        <p class="text-3xl font-bold text-orange-600 mt-2">{{ stats.get('pending_review', 0) }}</p>
                     </div>
                     <div class="bg-orange-100 rounded-full p-3">
                         <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
