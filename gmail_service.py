@@ -1,64 +1,67 @@
 import os
 import base64
+import requests
 from typing import List, Dict, Any
-from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send'
-]
-TOKEN_PATH = 'token.json'
-CREDENTIALS_PATH = 'credentials.json'
-
-def complete_auth_with_code(auth_code):
-    """Complete the OAuth flow with the authorization code."""
-    if not os.path.exists(CREDENTIALS_PATH):
-        raise Exception("Credentials file not found")
+def get_replit_gmail_access_token():
+    """
+    Get Gmail access token from Replit connection.
+    Uses Replit's Gmail integration instead of manual OAuth.
+    """
+    hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
+    x_replit_token = None
     
-    # Create a new flow instance
-    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-    flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
+    if os.environ.get('REPL_IDENTITY'):
+        x_replit_token = 'repl ' + os.environ['REPL_IDENTITY']
+    elif os.environ.get('WEB_REPL_RENEWAL'):
+        x_replit_token = 'depl ' + os.environ['WEB_REPL_RENEWAL']
     
-    # Fetch the token using the authorization code
-    flow.fetch_token(code=auth_code)
-    creds = flow.credentials
+    if not x_replit_token or not hostname:
+        raise Exception('Replit connection environment variables not found')
     
-    # Save credentials
-    with open(TOKEN_PATH, 'w') as token:
-        token.write(creds.to_json())
+    # Fetch connection settings from Replit Connectors API
+    response = requests.get(
+        f'https://{hostname}/api/v2/connection?include_secrets=true&connector_names=google-mail',
+        headers={
+            'Accept': 'application/json',
+            'X_REPLIT_TOKEN': x_replit_token
+        }
+    )
     
-    return True
+    if not response.ok:
+        raise Exception(f'Failed to get Gmail connection: {response.status_code}')
+    
+    data = response.json()
+    connection = data.get('items', [{}])[0]
+    
+    # Extract access token
+    access_token = (
+        connection.get('settings', {}).get('access_token') or
+        connection.get('settings', {}).get('oauth', {}).get('credentials', {}).get('access_token')
+    )
+    
+    if not access_token:
+        raise Exception('Gmail not connected via Replit. Please set up the Gmail connector.')
+    
+    return access_token
 
 def get_gmail_service():
-    """Authenticate and return Gmail API service."""
-    creds = None
+    """Authenticate and return Gmail API service using Replit connection."""
+    access_token = get_replit_gmail_access_token()
     
-    if os.path.exists(TOKEN_PATH):
-        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if not os.path.exists(CREDENTIALS_PATH):
-                raise FileNotFoundError(
-                    f"Gmail credentials file not found at {CREDENTIALS_PATH}. "
-                    "Please download it from Google Cloud Console."
-                )
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            flow.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'
-            
-            auth_url, _ = flow.authorization_url(prompt='consent')
-            
-            raise Exception(f"AUTHORIZATION_REQUIRED|||{auth_url}")
-        
-        with open(TOKEN_PATH, 'w') as token:
-            token.write(creds.to_json())
+    # Create credentials object with access token
+    creds = Credentials(token=access_token)
     
     return build('gmail', 'v1', credentials=creds)
+
+def complete_auth_with_code(auth_code):
+    """
+    Deprecated: Old OAuth flow function - kept as stub for backward compatibility.
+    Now using Replit Gmail connection instead.
+    """
+    raise Exception("Manual OAuth flow deprecated - using Replit Gmail connection instead")
 
 def decode_email_body(payload: Dict) -> str:
     """Decode email body from Gmail API response."""

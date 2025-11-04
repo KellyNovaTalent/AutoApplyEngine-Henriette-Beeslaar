@@ -87,13 +87,19 @@ def prepare_application(job_data: dict) -> Dict:
 
 def extract_email_from_job(job_data: dict) -> Optional[str]:
     """
-    Try to extract contact email from job description.
+    Try to extract contact email from job data.
+    First checks contact_email field, then falls back to description parsing.
     Returns None if no email found.
     """
     import re
-    description = job_data.get('description', '')
     
-    # Look for email patterns
+    # First check if contact_email field exists
+    contact_email = job_data.get('contact_email')
+    if contact_email and contact_email != 'N/A':
+        return contact_email
+    
+    # Fall back to extracting from description
+    description = job_data.get('description', '')
     email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
     emails = re.findall(email_pattern, description)
     
