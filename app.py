@@ -65,7 +65,8 @@ def index():
     if status and status != 'all':
         filters['status'] = status
     
-    min_score = request.args.get('min_score')
+    # Handle both min_score and min_match parameters
+    min_score = request.args.get('min_score') or request.args.get('min_match')
     if min_score:
         filters['min_score'] = int(min_score)
     

@@ -53,7 +53,7 @@
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="filterByStatus('applied')">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Auto-Applied</p>
@@ -67,7 +67,7 @@
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="filterByMatchScore('high')">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">High Matches (70%+)</p>
@@ -81,7 +81,7 @@
                 </div>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200">
+            <div class="bg-white rounded-xl shadow-sm p-6 stat-card border border-gray-200 cursor-pointer hover:shadow-md transition-shadow" onclick="filterByStatus('ready_to_apply')">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-600">Pending Review</p>
@@ -155,17 +155,20 @@
                         <p class="mt-1 text-sm text-gray-600">All job applications and their statuses</p>
                     </div>
                     <div class="flex gap-2">
-                        <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
-                            <option>All Statuses</option>
-                            <option>Auto-Applied</option>
-                            <option>Ready to Apply</option>
-                            <option>New</option>
+                        <select id="statusFilter" class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" onchange="applyFilters()">
+                            <option value="">All Statuses</option>
+                            <option value="applied">Auto-Applied</option>
+                            <option value="ready_to_apply">Ready to Apply</option>
+                            <option value="new">New</option>
                         </select>
-                        <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
-                            <option>All Sources</option>
-                            <option>Seek NZ</option>
-                            <option>Education Gazette</option>
+                        <select id="sourceFilter" class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" onchange="applyFilters()">
+                            <option value="">All Sources</option>
+                            <option value="Seek NZ">Seek NZ</option>
+                            <option value="Education Gazette">Education Gazette</option>
                         </select>
+                        <button onclick="clearFilters()" class="text-sm px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                            Clear Filters
+                        </button>
                     </div>
                 </div>
             </div>
@@ -258,6 +261,41 @@
     </div>
 
     <script>
+        // Filter functions
+        function filterByStatus(status) {
+            const statusFilter = document.getElementById('statusFilter');
+            statusFilter.value = status;
+            applyFilters();
+            
+            // Scroll to table
+            document.querySelector('.overflow-x-auto').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function filterByMatchScore(level) {
+            // Reload page with match score filter
+            const params = new URLSearchParams(window.location.search);
+            if (level === 'high') {
+                params.set('min_match', '70');
+            }
+            window.location.search = params.toString();
+        }
+        
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sourceFilter = document.getElementById('sourceFilter').value;
+            
+            // Build URL params
+            const params = new URLSearchParams();
+            if (statusFilter) params.set('status', statusFilter);
+            if (sourceFilter) params.set('source', sourceFilter);
+            
+            // Reload with filters
+            window.location.search = params.toString();
+        }
+        
+        function clearFilters() {
+            window.location.search = '';
+        }
         
         async function uploadSeekCSV(event) {
             const file = event.target.files[0];
