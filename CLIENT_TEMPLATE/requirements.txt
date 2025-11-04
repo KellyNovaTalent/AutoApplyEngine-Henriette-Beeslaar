@@ -1,0 +1,17 @@
+Flask==3.0.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.111.0
+beautifulsoup4==4.12.2
+APScheduler==3.10.4
+python-dotenv==1.0.0
+anthropic
+apify-client
+requests
+apify-client
+requests
+fpdf2
+fpdf
+playwright
+PyMuPDF
