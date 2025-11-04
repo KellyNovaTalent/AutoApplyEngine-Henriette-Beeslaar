@@ -191,6 +191,15 @@
                                     <div>
                                         <div class="text-sm font-medium text-gray-900">{{ job.job_title }}</div>
                                         <div class="text-sm text-gray-500">{{ job.company_name }} • {{ job.location }}</div>
+                                        {% if job.contact_email %}
+                                        <div class="text-xs text-gray-400 mt-1">📧 {{ job.contact_email }}</div>
+                                        {% endif %}
+                                        {% if job.application_date %}
+                                        <div class="text-xs text-green-600 mt-1">📅 Applied: {{ job.application_date[:16] }}</div>
+                                        {% endif %}
+                                        {% if job.notes %}
+                                        <div class="text-xs text-gray-600 mt-1">{{ job.notes }}</div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </td>
@@ -202,6 +211,8 @@
                                     {% else %}bg-gray-100 text-gray-800{% endif %}">
                                     {{ job.match_score }}%
                                 </span>
+                                {% else %}
+                                <span class="text-xs text-gray-400">Pending</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
