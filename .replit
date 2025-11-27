@@ -35,5 +35,9 @@ outputType = "webview"
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 45317
+externalPort = 3000
+
 [deployment]
 deploymentTarget = "cloudrun"
