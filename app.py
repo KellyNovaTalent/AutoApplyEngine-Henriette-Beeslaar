@@ -736,6 +736,126 @@ def upload_gazette_csv():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/update_descriptions_csv', methods=['POST'])
+@login_required
+def update_descriptions_csv():
+    """
+    Update existing job records with descriptions from a new CSV.
+    Matches jobs by URL or Title+Employer combination.
+    
+    Expected CSV columns: Title, Employer, Link, Description
+    """
+    try:
+        print(f"\n{'='*80}")
+        print(f"📝 UPDATE DESCRIPTIONS FROM CSV")
+        print(f"{'='*80}")
+        
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'})
+        
+        file = request.files['file']
+        
+        if file.filename == '' or not file.filename.endswith('.csv'):
+            return jsonify({'success': False, 'error': 'Please upload a CSV file'})
+        
+        csv_content = file.read().decode('utf-8')
+        
+        first_line = csv_content.split('\n')[0]
+        delimiter = ';' if ';' in first_line else ','
+        print(f"   📋 Detected delimiter: '{delimiter}'")
+        
+        csv_reader = csv.DictReader(StringIO(csv_content), delimiter=delimiter)
+        rows = list(csv_reader)
+        
+        if not rows:
+            return jsonify({'success': False, 'error': 'CSV file is empty'})
+        
+        print(f"   📋 CSV has {len(rows)} rows")
+        print(f"   📋 Columns: {list(rows[0].keys())}")
+        
+        conn = sqlite3.connect('jobs.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        jobs_updated = 0
+        jobs_not_found = 0
+        jobs_no_description = 0
+        
+        for row in rows:
+            try:
+                title = row.get('Title', row.get('Position', '')).strip()
+                employer = row.get('Employer', row.get('Hiring Company', '')).strip()
+                link = row.get('Link', row.get('Application Link', '')).strip()
+                description = row.get('Description', '').strip()
+                
+                if not description or description == 'N/A' or len(description) < 50:
+                    jobs_no_description += 1
+                    continue
+                
+                matched = False
+                
+                if link:
+                    cursor.execute('''
+                        SELECT id, job_title, company_name FROM jobs 
+                        WHERE job_url = ? AND (description IS NULL OR description = '' OR length(description) < 50)
+                    ''', (link,))
+                    job = cursor.fetchone()
+                    
+                    if job:
+                        cursor.execute('''
+                            UPDATE jobs SET description = ? WHERE id = ?
+                        ''', (description[:5000], job['id']))
+                        matched = True
+                        jobs_updated += 1
+                        print(f"   ✅ Updated (URL match): {job['job_title'][:40]}...")
+                
+                if not matched and title and employer:
+                    cursor.execute('''
+                        SELECT id, job_title, company_name FROM jobs 
+                        WHERE LOWER(job_title) LIKE LOWER(?) 
+                        AND LOWER(company_name) LIKE LOWER(?)
+                        AND (description IS NULL OR description = '' OR length(description) < 50)
+                    ''', (f'%{title[:30]}%', f'%{employer[:30]}%'))
+                    job = cursor.fetchone()
+                    
+                    if job:
+                        cursor.execute('''
+                            UPDATE jobs SET description = ? WHERE id = ?
+                        ''', (description[:5000], job['id']))
+                        matched = True
+                        jobs_updated += 1
+                        print(f"   ✅ Updated (title match): {job['job_title'][:40]}...")
+                
+                if not matched:
+                    jobs_not_found += 1
+                    
+            except Exception as e:
+                print(f"   ⚠️  Error: {e}")
+                continue
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"\n{'='*80}")
+        print(f"✅ DESCRIPTION UPDATE COMPLETE!")
+        print(f"   Jobs updated: {jobs_updated}")
+        print(f"   Jobs not found in database: {jobs_not_found}")
+        print(f"   Rows without descriptions: {jobs_no_description}")
+        print(f"{'='*80}\n")
+        
+        return jsonify({
+            'success': True,
+            'jobs_updated': jobs_updated,
+            'jobs_not_found': jobs_not_found,
+            'jobs_no_description': jobs_no_description
+        })
+        
+    except Exception as e:
+        print(f"❌ Error updating descriptions: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
 def extract_location_from_description(description: str) -> str:
     """Extract location from job description."""
     locations = [

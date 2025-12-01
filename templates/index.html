@@ -157,6 +157,40 @@
             </div>
         </div>
 
+        <!-- Update Job Descriptions Section -->
+        <div class="bg-white rounded-xl shadow-sm mb-8 border border-amber-200 bg-amber-50">
+            <div class="px-6 py-5 border-b border-amber-200">
+                <h2 class="text-lg font-semibold text-gray-900">Update Job Descriptions</h2>
+                <p class="mt-1 text-sm text-gray-600">Upload a CSV with job descriptions to update existing records</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex items-center gap-4">
+                    <label for="descriptionFile" class="cursor-pointer flex-1">
+                        <div class="border-2 border-dashed border-amber-300 rounded-lg p-6 hover:border-amber-500 transition-all hover:bg-amber-100">
+                            <div class="text-center">
+                                <svg class="mx-auto h-10 w-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                <p class="mt-2 text-sm font-medium text-gray-900">Upload CSV with Descriptions</p>
+                                <p class="mt-1 text-xs text-gray-500">Matches jobs by URL or Title+School and updates missing descriptions</p>
+                            </div>
+                        </div>
+                        <input type="file" id="descriptionFile" accept=".csv" class="hidden" onchange="uploadDescriptionsCSV(event)">
+                    </label>
+                </div>
+                
+                <div id="descriptionProgress" class="hidden mt-4">
+                    <div class="bg-amber-100 rounded-lg p-4 border border-amber-300">
+                        <div class="flex items-center">
+                            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-600 mr-3"></div>
+                            <span class="text-sm font-medium text-gray-700" id="descriptionProgressText">Updating descriptions...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Application Tracker -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200">
             <div class="px-6 py-5 border-b border-gray-200">
@@ -432,6 +466,45 @@
                 alert('Error: ' + error.message);
                 progress.classList.add('hidden');
             }
+        }
+        
+        async function uploadDescriptionsCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const progress = document.getElementById('descriptionProgress');
+            const progressText = document.getElementById('descriptionProgressText');
+            
+            progress.classList.remove('hidden');
+            progressText.textContent = '📝 Matching and updating job descriptions...';
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/update_descriptions_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Updated ${data.jobs_updated} job descriptions! (${data.jobs_not_found} not found, ${data.jobs_no_description} had no description)`;
+                    setTimeout(() => {
+                        progress.classList.add('hidden');
+                        alert(`Successfully updated ${data.jobs_updated} job descriptions!`);
+                    }, 3000);
+                } else {
+                    alert('Error: ' + (data.error || 'Update failed'));
+                    progress.classList.add('hidden');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+            }
+            
+            event.target.value = '';
         }
     </script>
 </body>
