@@ -42,8 +42,8 @@ Languages: {', '.join(user_profile['languages'])}
 **Job Details:**
 Position: {job_data['job_title']}
 Company/School: {job_data['company_name']}
-Location: {job_data['location']}
-Description: {job_data['description'][:1500]}
+Location: {job_data.get('location', 'New Zealand')}
+Description: {(job_data.get('description') or 'Teaching position in New Zealand school')[:1500]}
 
 **Requirements:**
 1. Write a compelling, professional cover letter (250-350 words)
