@@ -3,6 +3,7 @@ AI-powered cover letter generator using Claude.
 Creates personalized cover letters tailored to each job posting.
 """
 import os
+from datetime import datetime
 from anthropic import Anthropic
 from cv_profile import USER_PROFILE
 
@@ -23,7 +24,12 @@ def generate_cover_letter(job_data: dict) -> str:
     client = Anthropic(api_key=api_key)
     user_profile = USER_PROFILE
     
+    # Get current date formatted for NZ business letter
+    current_date = datetime.now().strftime("%d %B %Y")
+    
     prompt = f"""You are writing a professional cover letter for a teaching job application in New Zealand.
+
+**Today's Date:** {current_date}
 
 **Applicant Profile:**
 Name: {user_profile['name']}
@@ -41,14 +47,15 @@ Description: {job_data['description'][:1500]}
 
 **Requirements:**
 1. Write a compelling, professional cover letter (250-350 words)
-2. Highlight relevant experience with special needs students (autism, Down syndrome, ADHD, intellectual disabilities)
-3. Emphasize 18+ years of Foundation Phase and Special Education teaching experience
-4. Mention NZ Teaching Registration and B.Ed Foundation Phase qualification
-5. Show enthusiasm for the specific role and school
-6. Keep tone professional but warm and personable
-7. Include proper New Zealand business letter format
-8. Do NOT include placeholder addresses - start directly with the greeting
+2. Start with the date "{current_date}" at the top (NOT a placeholder like "(date)")
+3. Highlight relevant experience with special needs students (autism, Down syndrome, ADHD, intellectual disabilities)
+4. Emphasize 18+ years of Foundation Phase and Special Education teaching experience
+5. Mention NZ Teaching Registration and B.Ed Foundation Phase qualification
+6. Show enthusiasm for the specific role and school
+7. Keep tone professional but warm and personable
+8. Do NOT include placeholder addresses - start with date, then greeting
 9. Sign off with "Warm regards" or "Kind regards"
+10. IMPORTANT: Use the ACTUAL date "{current_date}" - never write "(date)" or "[date]"
 
 Write the complete cover letter now:"""
 
