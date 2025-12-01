@@ -1,13 +1,72 @@
 import os
+import requests
+from bs4 import BeautifulSoup
 from anthropic import Anthropic
 from cv_profile import CV_SUMMARY, JOB_PREFERENCES
+
+def fetch_job_description(url: str) -> str:
+    """
+    Fetch job description from the job posting URL.
+    Returns the extracted description text or empty string if failed.
+    """
+    if not url:
+        return ''
+    
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            print(f"   Failed to fetch URL (status {response.status_code})")
+            return ''
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        for script in soup(['script', 'style', 'nav', 'header', 'footer']):
+            script.decompose()
+        
+        description_selectors = [
+            '.job-description', '.description', '#job-description',
+            '[class*="description"]', '[class*="job-detail"]',
+            '.vacancy-description', '.job-content', '.posting-content',
+            'article', 'main', '.content'
+        ]
+        
+        description_text = ''
+        for selector in description_selectors:
+            elements = soup.select(selector)
+            if elements:
+                description_text = ' '.join([el.get_text(separator=' ', strip=True) for el in elements])
+                if len(description_text) > 100:
+                    break
+        
+        if len(description_text) < 100:
+            body = soup.find('body')
+            if body:
+                description_text = body.get_text(separator=' ', strip=True)
+        
+        description_text = ' '.join(description_text.split())
+        
+        if len(description_text) > 5000:
+            description_text = description_text[:5000] + '...'
+        
+        print(f"   ✅ Fetched description: {len(description_text)} chars")
+        return description_text
+        
+    except Exception as e:
+        print(f"   ❌ Error fetching description: {e}")
+        return ''
 
 def analyze_job_match(job_data: dict) -> dict:
     """
     Use Claude AI to analyze a job posting and return match score and reasoning.
+    If description is missing, attempts to fetch it from the job URL.
     
     Returns:
-        dict with 'match_score' (0-100), 'analysis' (reasoning), and 'has_description' (bool)
+        dict with 'match_score' (0-100), 'analysis' (reasoning), 'has_description' (bool), 
+        and optionally 'fetched_description' if we retrieved it
     """
     try:
         api_key = os.environ.get('ANTHROPIC_API_KEY')
@@ -23,18 +82,20 @@ def analyze_job_match(job_data: dict) -> dict:
         description = job_data.get('description', '')
         salary = job_data.get('salary_info', 'Not specified')
         source = job_data.get('source_platform', '')
+        job_url = job_data.get('job_url', '')
         
+        fetched_description = None
         description_missing = not description or len(description.strip()) < 50
         
+        if description_missing and job_url:
+            print(f"📥 Job '{job_title}' missing description - fetching from URL...")
+            fetched_description = fetch_job_description(job_url)
+            if fetched_description and len(fetched_description) >= 50:
+                description = fetched_description
+                description_missing = False
+        
         if description_missing:
-            print(f"⚠️ WARNING: Job '{job_title}' at {company} has NO/insufficient description!")
-            print(f"   Description length: {len(description.strip()) if description else 0} chars (minimum 50 required)")
-            return {
-                'match_score': 0,
-                'analysis': '⚠️ BLOCKED: Cannot score - job description is missing or too short. Full job details required for accurate matching.',
-                'has_description': False,
-                'blocked': True
-            }
+            print(f"⚠️ Job '{job_title}' at {company}: No description available (URL fetch failed or no URL)")
         
         prompt = f"""You are a career matching expert analyzing job postings for a highly experienced teacher.
 
@@ -121,16 +182,24 @@ ANALYSIS: [your 2-3 sentence analysis]"""
         
         print(f"AI Analysis for '{job_title}': Score {score}/100")
         
-        return {
+        result = {
             'match_score': score,
-            'analysis': analysis
+            'analysis': analysis,
+            'has_description': not description_missing
         }
+        
+        if fetched_description:
+            result['fetched_description'] = fetched_description
+            print(f"   📝 Returning fetched description for storage ({len(fetched_description)} chars)")
+        
+        return result
         
     except Exception as e:
         print(f"Error in AI analysis: {e}")
         return {
             'match_score': 0,
-            'analysis': f'AI analysis error: {str(e)}'
+            'analysis': f'AI analysis error: {str(e)}',
+            'has_description': False
         }
 
 def should_analyze_job(job_data: dict) -> bool:

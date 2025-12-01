@@ -195,6 +195,10 @@ def analyze_jobs():
             job_data['rejection_reason'] = None
             job_data['email_id'] = None
             
+            if ai_result.get('fetched_description'):
+                job_data['description'] = ai_result['fetched_description']
+                print(f"   📝 Stored fetched description ({len(ai_result['fetched_description'])} chars)")
+            
             print(f"   ✨ Match Score: {ai_result['match_score']}%")
             
             # Insert into database
@@ -279,6 +283,9 @@ def auto_search_jobs():
                     job_data['ai_analysis'] = ai_result['analysis']
                     job_data['status'] = 'new'
                     
+                    if ai_result.get('fetched_description'):
+                        job_data['description'] = ai_result['fetched_description']
+                    
                     job_id = insert_job(job_data)
                     if job_id:
                         job_data['id'] = job_id
@@ -331,6 +338,9 @@ def auto_search_jobs():
                 job_data['status'] = 'new'
                 job_data['rejection_reason'] = None
                 job_data['email_id'] = None
+                
+                if ai_result.get('fetched_description'):
+                    job_data['description'] = ai_result['fetched_description']
                 
                 print(f"   ✨ Match Score: {ai_result['match_score']}%")
                 
@@ -417,6 +427,9 @@ def scrape_gazette_endpoint():
                 job_data['match_score'] = ai_result['match_score']
                 job_data['ai_analysis'] = ai_result['analysis']
                 job_data['status'] = 'new'
+                
+                if ai_result.get('fetched_description'):
+                    job_data['description'] = ai_result['fetched_description']
                 
                 print(f"   ✨ Match Score: {ai_result['match_score']}%")
                 
@@ -506,16 +519,26 @@ def analyze_new_jobs():
                 job_data['match_score'] = ai_result['match_score']
                 job_data['ai_analysis'] = ai_result['analysis']
                 
+                if ai_result.get('fetched_description'):
+                    job_data['description'] = ai_result['fetched_description']
+                
                 print(f"   ✨ Match Score: {ai_result['match_score']}%")
                 
-                # Update the job in database with score
+                # Update the job in database with score and description
                 conn = sqlite3.connect('jobs.db')
                 cursor = conn.cursor()
-                cursor.execute('''
-                    UPDATE jobs 
-                    SET match_score = ?, ai_analysis = ?
-                    WHERE id = ?
-                ''', (ai_result['match_score'], ai_result['analysis'], job_data['id']))
+                if ai_result.get('fetched_description'):
+                    cursor.execute('''
+                        UPDATE jobs 
+                        SET match_score = ?, ai_analysis = ?, description = ?
+                        WHERE id = ?
+                    ''', (ai_result['match_score'], ai_result['analysis'], ai_result['fetched_description'], job_data['id']))
+                else:
+                    cursor.execute('''
+                        UPDATE jobs 
+                        SET match_score = ?, ai_analysis = ?
+                        WHERE id = ?
+                    ''', (ai_result['match_score'], ai_result['analysis'], job_data['id']))
                 conn.commit()
                 conn.close()
                 
@@ -667,6 +690,9 @@ def upload_gazette_csv():
                 job_data['ai_analysis'] = ai_result['analysis']
                 job_data['status'] = 'new'
                 
+                if ai_result.get('fetched_description'):
+                    job_data['description'] = ai_result['fetched_description']
+                
                 print(f"   ✨ Match Score: {ai_result['match_score']}%")
                 if contact_email:
                     print(f"   📧 Email: {contact_email}")
@@ -800,6 +826,9 @@ def scheduled_job_search():
                 ai_result = analyze_job_match(job)
                 job['match_score'] = ai_result['match_score']
                 job['ai_analysis'] = ai_result['analysis']
+                
+                if ai_result.get('fetched_description'):
+                    job['description'] = ai_result['fetched_description']
                 
                 # Save to database
                 job_id = insert_job(job)
