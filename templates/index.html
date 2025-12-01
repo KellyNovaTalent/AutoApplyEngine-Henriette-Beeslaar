@@ -163,7 +163,12 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-lg font-semibold text-gray-900">Application Tracker</h2>
-                        <p class="mt-1 text-sm text-gray-600">All job applications and their statuses</p>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Showing <span class="font-semibold text-purple-600">{{ jobs|length }}</span> jobs
+                            {% if request.args.get('status') %}
+                            with status: <span class="font-medium">{{ request.args.get('status') }}</span>
+                            {% endif %}
+                        </p>
                     </div>
                     <div class="flex gap-2">
                         <select id="statusFilter" class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500" onchange="applyFilters()">
@@ -307,6 +312,20 @@
         function clearFilters() {
             window.location.search = '';
         }
+        
+        // Initialize filter dropdowns from URL params on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            const statusParam = params.get('status');
+            const sourceParam = params.get('source');
+            
+            if (statusParam) {
+                document.getElementById('statusFilter').value = statusParam;
+            }
+            if (sourceParam) {
+                document.getElementById('sourceFilter').value = sourceParam;
+            }
+        });
         
         async function uploadSeekCSV(event) {
             const file = event.target.files[0];
