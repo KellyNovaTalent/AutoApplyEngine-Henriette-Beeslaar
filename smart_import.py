@@ -116,6 +116,11 @@ def smart_import_csv(csv_path):
             
             print(f"      Match Score: {match_score}%")
             
+            if match_score < 70:
+                print(f"      ⏭️  Skipping (below 70% threshold)")
+                stats['duplicates_skipped'] += 1
+                continue
+            
             job_data = {
                 'job_title': title,
                 'company_name': employer,
@@ -142,8 +147,8 @@ def smart_import_csv(csv_path):
                     ''', (email, job_id))
                     conn.commit()
                 
-                if match_score >= 70 and email:
-                    print(f"      🎯 High match with email - attempting auto-apply...")
+                if email:
+                    print(f"      🎯 {match_score}% match with email - auto-applying...")
                     job_data['id'] = job_id
                     apply_result = auto_apply_to_job(job_data)
                     if apply_result.get('success'):

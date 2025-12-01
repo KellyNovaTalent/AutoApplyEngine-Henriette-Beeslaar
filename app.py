@@ -694,6 +694,12 @@ def upload_gazette_csv():
                     job_data['description'] = ai_result['fetched_description']
                 
                 print(f"   ✨ Match Score: {ai_result['match_score']}%")
+                
+                if ai_result['match_score'] < 70:
+                    print(f"   ⏭️  Skipped (below 70% threshold)")
+                    jobs_skipped += 1
+                    continue
+                
                 if contact_email:
                     print(f"   📧 Email: {contact_email}")
                 
@@ -704,10 +710,10 @@ def upload_gazette_csv():
                     print(f"   💾 Saved (ID: {job_id})")
                     
                     if should_auto_apply(job_data):
-                        print(f"   🎯 Match score {job_data['match_score']}% - attempting auto-apply")
+                        print(f"   🎯 {job_data['match_score']}% match - attempting auto-apply")
                         apply_result = auto_apply_to_job(job_data)
                         if apply_result['success']:
-                            print(f"   ✅ Application prepared")
+                            print(f"   ✅ Application sent!")
                         else:
                             print(f"   ⏭️  Auto-apply skipped: {apply_result.get('reason', '')}")
                 else:
