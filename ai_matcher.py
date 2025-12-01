@@ -7,13 +7,13 @@ def analyze_job_match(job_data: dict) -> dict:
     Use Claude AI to analyze a job posting and return match score and reasoning.
     
     Returns:
-        dict with 'match_score' (0-100) and 'analysis' (reasoning)
+        dict with 'match_score' (0-100), 'analysis' (reasoning), and 'has_description' (bool)
     """
     try:
         api_key = os.environ.get('ANTHROPIC_API_KEY')
         if not api_key:
             print("Warning: ANTHROPIC_API_KEY not set, skipping AI analysis")
-            return {'match_score': 0, 'analysis': 'AI analysis disabled - no API key'}
+            return {'match_score': 0, 'analysis': 'AI analysis disabled - no API key', 'has_description': False}
         
         client = Anthropic(api_key=api_key)
         
@@ -23,6 +23,18 @@ def analyze_job_match(job_data: dict) -> dict:
         description = job_data.get('description', '')
         salary = job_data.get('salary_info', 'Not specified')
         source = job_data.get('source_platform', '')
+        
+        description_missing = not description or len(description.strip()) < 50
+        
+        if description_missing:
+            print(f"⚠️ WARNING: Job '{job_title}' at {company} has NO/insufficient description!")
+            print(f"   Description length: {len(description.strip()) if description else 0} chars (minimum 50 required)")
+            return {
+                'match_score': 0,
+                'analysis': '⚠️ BLOCKED: Cannot score - job description is missing or too short. Full job details required for accurate matching.',
+                'has_description': False,
+                'blocked': True
+            }
         
         prompt = f"""You are a career matching expert analyzing job postings for a highly experienced teacher.
 
@@ -78,7 +90,8 @@ ANALYSIS: [your 2-3 sentence analysis]"""
             print(f"Warning: No text content found in AI response for '{job_title}'")
             return {
                 'match_score': 0,
-                'analysis': 'AI response parsing error - no text content found'
+                'analysis': 'AI response parsing error - no text content found',
+                'has_description': True
             }
         
         score = 0
