@@ -134,6 +134,17 @@
                     </label>
                 </div>
                 
+                <!-- Analyze & Apply Button -->
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <button onclick="analyzeAndApply()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Analyze New Jobs & Auto-Apply (70%+ matches)
+                    </button>
+                    <p class="mt-2 text-xs text-gray-500 text-center">Analyzes unprocessed jobs with AI and sends applications to high matches</p>
+                </div>
+                
                 <!-- Progress -->
                 <div id="uploadProgress" class="hidden mt-4">
                     <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
@@ -367,6 +378,37 @@
             }
             
             event.target.value = '';
+        }
+        
+        async function analyzeAndApply() {
+            const progress = document.getElementById('uploadProgress');
+            const progressText = document.getElementById('uploadProgressText');
+            
+            if (!confirm('This will analyze all new jobs with AI and auto-send applications to 70%+ matches. Continue?')) {
+                return;
+            }
+            
+            progress.classList.remove('hidden');
+            progressText.textContent = '🤖 Analyzing jobs with AI... This may take a few minutes...';
+            
+            try {
+                const response = await fetch('/analyze_new_jobs', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    progressText.textContent = `✅ Analyzed ${data.jobs_analyzed} jobs! Sent ${data.jobs_applied} applications. Refreshing...`;
+                    setTimeout(() => window.location.reload(), 2500);
+                } else {
+                    alert('Error: ' + (data.error || 'Analysis failed'));
+                    progress.classList.add('hidden');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                progress.classList.add('hidden');
+            }
         }
     </script>
 </body>

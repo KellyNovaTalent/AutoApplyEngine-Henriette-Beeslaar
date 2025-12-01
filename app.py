@@ -425,6 +425,104 @@ def scrape_gazette_endpoint():
             'error': 'Education Gazette scraper blocked. Please use CSV upload option.'
         })
 
+@app.route('/analyze_new_jobs', methods=['POST'])
+@login_required
+def analyze_new_jobs():
+    """
+    Analyze all jobs with status 'new' using AI and auto-apply to 70%+ matches.
+    This is useful after adding a new API key or uploading new jobs.
+    """
+    try:
+        import sqlite3
+        
+        print(f"\n{'='*80}")
+        print(f"🤖 ANALYZING NEW JOBS & AUTO-APPLYING")
+        print(f"{'='*80}")
+        
+        conn = sqlite3.connect('jobs.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Get all jobs with status 'new' that haven't been analyzed (match_score is 0 or NULL)
+        cursor.execute('''
+            SELECT * FROM jobs 
+            WHERE status = 'new' 
+            AND (match_score IS NULL OR match_score = 0)
+            ORDER BY id DESC
+            LIMIT 100
+        ''')
+        new_jobs = cursor.fetchall()
+        conn.close()
+        
+        total_jobs = len(new_jobs)
+        jobs_analyzed = 0
+        jobs_applied = 0
+        jobs_failed = 0
+        
+        print(f"   Found {total_jobs} jobs to analyze")
+        
+        for row in new_jobs:
+            job_data = dict(row)
+            
+            try:
+                print(f"\n   🤖 Analyzing: {job_data['job_title'][:50]}...")
+                
+                # Analyze with AI
+                ai_result = analyze_job_match(job_data)
+                job_data['match_score'] = ai_result['match_score']
+                job_data['ai_analysis'] = ai_result['analysis']
+                
+                print(f"   ✨ Match Score: {ai_result['match_score']}%")
+                
+                # Update the job in database with score
+                conn = sqlite3.connect('jobs.db')
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE jobs 
+                    SET match_score = ?, ai_analysis = ?
+                    WHERE id = ?
+                ''', (ai_result['match_score'], ai_result['analysis'], job_data['id']))
+                conn.commit()
+                conn.close()
+                
+                jobs_analyzed += 1
+                
+                # Auto-apply if match score is 70% or higher
+                if ai_result['match_score'] >= 70:
+                    print(f"   🎯 High match - attempting auto-apply...")
+                    apply_result = auto_apply_to_job(job_data)
+                    if apply_result.get('success') and apply_result.get('sent'):
+                        jobs_applied += 1
+                        print(f"   ✅ Application sent!")
+                    elif apply_result.get('success'):
+                        print(f"   📋 Application prepared (no email found)")
+                        
+            except Exception as e:
+                print(f"   ❌ Error: {e}")
+                jobs_failed += 1
+                continue
+        
+        print(f"\n{'='*80}")
+        print(f"✅ ANALYSIS COMPLETE!")
+        print(f"   Jobs analyzed: {jobs_analyzed}")
+        print(f"   Applications sent: {jobs_applied}")
+        print(f"   Failed: {jobs_failed}")
+        print(f"{'='*80}\n")
+        
+        return jsonify({
+            'success': True,
+            'jobs_analyzed': jobs_analyzed,
+            'jobs_applied': jobs_applied,
+            'jobs_failed': jobs_failed,
+            'total_jobs': total_jobs
+        })
+        
+    except Exception as e:
+        print(f"❌ Error analyzing jobs: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/upload_gazette_csv', methods=['POST'])
 @login_required
 def upload_gazette_csv():
