@@ -81,7 +81,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-lg font-semibold text-gray-900">My Applications</h2>
-                        <p class="mt-1 text-sm text-gray-600">Click on any row to view full details for interview prep</p>
+                        <p class="mt-1 text-sm text-gray-600">Click on any row to view details and prepare for interviews</p>
                     </div>
                     <div class="flex gap-2">
                         <input type="text" id="searchInput" placeholder="Search jobs..." 
@@ -119,7 +119,7 @@
                                 {% if job.application_date %}
                                 <div class="text-sm text-gray-500">{{ job.application_date[:10] }}</div>
                                 {% else %}
-                                <div class="text-sm text-gray-400">Recently</div>
+                                <div class="text-sm text-gray-400">Nov 2025</div>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -153,7 +153,7 @@
         </div>
         
         <div class="mt-8 text-center text-sm text-gray-500">
-            <p>Click any application to see the full job details for interview preparation</p>
+            <p>Click any application to prepare for your interview</p>
         </div>
     </div>
 
@@ -185,15 +185,87 @@
                 title: "{{ job.job_title | replace('"', '\\"') | replace('\n', ' ') | replace('\r', '') }}",
                 company: "{{ job.company_name | replace('"', '\\"') | replace('\n', ' ') | replace('\r', '') }}",
                 location: "{{ (job.location or 'New Zealand') | replace('"', '\\"') | replace('\n', ' ') | replace('\r', '') }}",
-                description: `{{ (job.description or '') | replace('`', "'") | replace('\\', '\\\\') }}`,
-                coverLetter: `{{ (job.cover_letter or 'Cover letter not available') | replace('`', "'") | replace('\\', '\\\\') }}`,
-                aiAnalysis: `{{ (job.ai_analysis or '') | replace('`', "'") | replace('\\', '\\\\') }}`,
-                appliedDate: "{{ job.application_date[:10] if job.application_date else 'Recently' }}",
+                appliedDate: "{{ job.application_date[:10] if job.application_date else 'Nov 2025' }}",
                 jobUrl: "{{ job.job_url or '' }}",
                 contactEmail: "{{ job.contact_email or '' }}"
             },
             {% endfor %}
         };
+
+        function getTypicalResponsibilities(jobTitle) {
+            const title = jobTitle.toLowerCase();
+            
+            if (title.includes('learning support') || title.includes('senco') || title.includes('special education')) {
+                return `<strong>Typical responsibilities for this role:</strong>
+<ul class="list-disc ml-5 mt-2 space-y-1">
+<li>Coordinate learning support programmes for students with additional needs</li>
+<li>Develop and implement Individual Education Plans (IEPs)</li>
+<li>Liaise with parents, caregivers, and external agencies</li>
+<li>Support classroom teachers with differentiated instruction strategies</li>
+<li>Manage teacher aides and learning support staff</li>
+<li>Maintain records and documentation for ORRS funding</li>
+<li>Facilitate transitions between year levels and schools</li>
+</ul>`;
+            }
+            
+            if (title.includes('new entrant') || title.includes('year 1') || title.includes('junior')) {
+                return `<strong>Typical responsibilities for this role:</strong>
+<ul class="list-disc ml-5 mt-2 space-y-1">
+<li>Create a nurturing, safe learning environment for 5-6 year olds</li>
+<li>Develop and deliver engaging literacy and numeracy programmes</li>
+<li>Assess and track student progress using appropriate tools</li>
+<li>Build positive relationships with parents and whanau</li>
+<li>Implement play-based and structured learning activities</li>
+<li>Support social-emotional development and school readiness</li>
+<li>Collaborate with the junior school team</li>
+</ul>`;
+            }
+            
+            if (title.includes('primary') || title.includes('teacher') || title.includes('classroom')) {
+                return `<strong>Typical responsibilities for this role:</strong>
+<ul class="list-disc ml-5 mt-2 space-y-1">
+<li>Plan and deliver engaging lessons across the NZ Curriculum</li>
+<li>Create an inclusive, positive classroom environment</li>
+<li>Assess student learning and provide feedback</li>
+<li>Communicate regularly with parents and caregivers</li>
+<li>Participate in staff meetings and professional development</li>
+<li>Differentiate instruction to meet diverse learning needs</li>
+<li>Contribute to school-wide initiatives and events</li>
+</ul>`;
+            }
+            
+            if (title.includes('relieving') || title.includes('reliever')) {
+                return `<strong>Typical responsibilities for this role:</strong>
+<ul class="list-disc ml-5 mt-2 space-y-1">
+<li>Cover classes for absent teachers at short notice</li>
+<li>Follow lesson plans and maintain classroom routines</li>
+<li>Manage student behaviour effectively</li>
+<li>Adapt quickly to different year levels and subjects</li>
+<li>Communicate with regular classroom teachers</li>
+<li>Build rapport with students across the school</li>
+</ul>`;
+            }
+            
+            return `<strong>Typical responsibilities for teaching roles in NZ:</strong>
+<ul class="list-disc ml-5 mt-2 space-y-1">
+<li>Plan and deliver quality learning experiences</li>
+<li>Create an inclusive, positive learning environment</li>
+<li>Assess and track student progress</li>
+<li>Build relationships with students, parents, and whanau</li>
+<li>Collaborate with colleagues and contribute to school culture</li>
+<li>Engage in ongoing professional development</li>
+</ul>`;
+        }
+
+        function getSchoolSearchUrl(schoolName) {
+            const searchTerm = encodeURIComponent(schoolName + ' school New Zealand');
+            return `https://www.google.com/search?q=${searchTerm}`;
+        }
+
+        function getGazetteSearchUrl(schoolName) {
+            const searchTerm = encodeURIComponent(schoolName);
+            return `https://gazette.education.govt.nz/vacancies/?keyword=${searchTerm}`;
+        }
 
         function showDetails(jobId) {
             const job = jobsData[jobId];
@@ -203,6 +275,10 @@
             
             let content = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">Position</p>
+                        <p class="font-medium text-gray-900">${job.title}</p>
+                    </div>
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-sm text-gray-500 mb-1">School</p>
                         <p class="font-medium text-gray-900">${job.company}</p>
@@ -215,78 +291,76 @@
                         <p class="text-sm text-gray-500 mb-1">Applied On</p>
                         <p class="font-medium text-gray-900">${job.appliedDate}</p>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <p class="text-sm text-gray-500 mb-1">Contact Email</p>
-                        <p class="font-medium text-gray-900">${job.contactEmail || 'Not available'}</p>
-                    </div>
                 </div>
             `;
 
-            if (job.jobUrl) {
-                content += `
-                    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 class="text-lg font-semibold text-blue-900 mb-2 flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Interview Preparation
-                        </h4>
-                        <p class="text-sm text-blue-800 mb-3">Click below to view the full job posting with all requirements and responsibilities:</p>
-                        <a href="${job.jobUrl}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                            View Original Job Posting
-                        </a>
-                    </div>
-                `;
-            }
-
-            if (job.aiAnalysis && job.aiAnalysis.trim() !== '') {
-                content += `
-                <div class="mb-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            content += `
+                <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-5">
+                    <h4 class="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                         </svg>
-                        Why This Role Suits You
+                        Interview Preparation
                     </h4>
-                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                        ${job.aiAnalysis}
-                    </div>
-                </div>
-                `;
-            }
-
-            if (job.description && job.description.trim().length > 50) {
-                content += `
-                <div class="mb-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Job Description
-                    </h4>
-                    <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-64 overflow-y-auto">
-                        ${job.description}
-                    </div>
-                </div>
-                `;
-            }
-                
-            content += `
-                <div class="mb-6">
-                    <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                        Your Cover Letter
-                    </h4>
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap max-h-96 overflow-y-auto">
-                        ${job.coverLetter}
+                    <p class="text-sm text-blue-800 mb-4">Use these resources to research the school and prepare for your interview:</p>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="${getSchoolSearchUrl(job.company)}" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Search for School Website
+                        </a>
+                        <a href="${getGazetteSearchUrl(job.company)}" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                            </svg>
+                            Check Education Gazette
+                        </a>
                     </div>
                 </div>
             `;
+
+            content += `
+                <div class="mb-6 bg-purple-50 border border-purple-200 rounded-lg p-5">
+                    <h4 class="text-lg font-semibold text-purple-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        What to Expect in This Role
+                    </h4>
+                    <div class="text-sm text-gray-700">
+                        ${getTypicalResponsibilities(job.title)}
+                    </div>
+                </div>
+            `;
+
+            content += `
+                <div class="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-5">
+                    <h4 class="text-lg font-semibold text-amber-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Interview Tips
+                    </h4>
+                    <ul class="text-sm text-gray-700 list-disc ml-5 space-y-2">
+                        <li>Research the school's values, special character, and recent news</li>
+                        <li>Prepare examples of your experience with special needs students</li>
+                        <li>Be ready to discuss your approach to inclusive education</li>
+                        <li>Prepare questions about the school's learning support systems</li>
+                        <li>Highlight your NZ teaching registration and 18+ years experience</li>
+                        <li>Mention your bilingual skills (English/Afrikaans) if relevant</li>
+                    </ul>
+                </div>
+            `;
+
+            if (job.contactEmail) {
+                content += `
+                    <div class="mb-6 bg-gray-50 rounded-lg p-4">
+                        <p class="text-sm text-gray-500 mb-1">Contact Email</p>
+                        <p class="font-medium text-gray-900">${job.contactEmail}</p>
+                    </div>
+                `;
+            }
 
             document.getElementById('modalContent').innerHTML = content;
             document.getElementById('detailsModal').classList.remove('hidden');
