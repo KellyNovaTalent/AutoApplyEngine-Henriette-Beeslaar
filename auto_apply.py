@@ -3,6 +3,7 @@ Automatic job application system.
 Sends applications with CV and tailored cover letters for matching jobs.
 """
 import os
+import sqlite3
 from datetime import datetime
 from typing import Dict, Optional
 from cover_letter_generator import generate_cover_letter, generate_email_subject, generate_email_body
@@ -16,6 +17,64 @@ AUTO_APPLY_ENABLED = os.environ.get('AUTO_APPLY_ENABLED', 'true').lower() == 'tr
 MIN_MATCH_SCORE_FOR_AUTO_APPLY = 70
 
 
+def already_applied_to_job(job_data: dict) -> bool:
+    """
+    Check if we've already applied to this job or a similar one at the same school.
+    Prevents duplicate applications.
+    """
+    try:
+        conn = sqlite3.connect('jobs.db')
+        cursor = conn.cursor()
+        
+        job_url = job_data.get('job_url', '')
+        job_title = job_data.get('job_title', '')
+        company_name = job_data.get('company_name', '')
+        contact_email = job_data.get('contact_email') or job_data.get('email_id', '')
+        
+        if job_url:
+            cursor.execute('''
+                SELECT id FROM jobs 
+                WHERE job_url = ? AND status = 'applied'
+            ''', (job_url,))
+            if cursor.fetchone():
+                conn.close()
+                print(f"   ⚠️  Already applied to this exact job URL")
+                return True
+        
+        if job_title and company_name:
+            cursor.execute('''
+                SELECT id FROM jobs 
+                WHERE LOWER(job_title) = LOWER(?) 
+                AND LOWER(company_name) = LOWER(?)
+                AND status = 'applied'
+            ''', (job_title, company_name))
+            if cursor.fetchone():
+                conn.close()
+                print(f"   ⚠️  Already applied to '{job_title}' at '{company_name}'")
+                return True
+        
+        if contact_email and company_name:
+            cursor.execute('''
+                SELECT COUNT(*) FROM jobs 
+                WHERE email_id = ? 
+                AND LOWER(company_name) = LOWER(?)
+                AND status = 'applied'
+                AND date(application_date) = date('now')
+            ''', (contact_email, company_name))
+            count = cursor.fetchone()[0]
+            if count >= 2:
+                conn.close()
+                print(f"   ⚠️  Already sent 2+ applications to {company_name} today")
+                return True
+        
+        conn.close()
+        return False
+        
+    except Exception as e:
+        print(f"   ⚠️  Error checking duplicates: {e}")
+        return False
+
+
 def should_auto_apply(job_data: dict) -> bool:
     """
     Determine if we should automatically apply to this job.
@@ -23,6 +82,7 @@ def should_auto_apply(job_data: dict) -> bool:
     Criteria:
     - Match score >= 70%
     - Status is 'new' (not already applied)
+    - Haven't already applied to this job
     - Auto-apply is enabled in config
     """
     match_score = job_data.get('match_score', 0)
@@ -32,6 +92,9 @@ def should_auto_apply(job_data: dict) -> bool:
         return False
     
     if match_score < MIN_MATCH_SCORE_FOR_AUTO_APPLY:
+        return False
+    
+    if already_applied_to_job(job_data):
         return False
     
     return True
