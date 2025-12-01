@@ -47,19 +47,20 @@ Description: {(job_data.get('description') or 'Teaching position in New Zealand 
 
 **Requirements:**
 1. Write a compelling, professional cover letter (250-350 words)
-2. Start with the date "{current_date}" at the top (NOT a placeholder like "(date)")
-3. Highlight relevant experience with special needs students (autism, Down syndrome, ADHD, intellectual disabilities)
-4. Emphasize 18+ years of Foundation Phase and Special Education teaching experience
-5. Mention NZ Teaching Registration and B.Ed Foundation Phase qualification
-6. Show enthusiasm for the specific role and school
-7. Keep tone professional but warm and personable
-8. Do NOT include placeholder addresses - start with date, then greeting
-9. Sign off with "Warm regards" or "Kind regards"
-10. IMPORTANT: Use the ACTUAL date "{current_date}" - never write "(date)" or "[date]"
-11. IMPORTANT: Include that I am currently based in South Africa and am available to relocate within 6 weeks notice
-12. IMPORTANT: Mention that I am working with a licensed immigration advisor to ensure a smooth transition to New Zealand
+2. Start with the date "{current_date}" at the top
+3. Include a greeting (Dear Hiring Manager / Dear Principal)
+4. Highlight relevant experience with special needs students (autism, Down syndrome, ADHD, intellectual disabilities)
+5. Emphasize 18+ years of Foundation Phase and Special Education teaching experience
+6. Mention NZ Teaching Registration and B.Ed Foundation Phase qualification
+7. Show enthusiasm for the specific role and school
+8. Include that I am currently based in South Africa and available to relocate within 6 weeks notice
+9. Mention I am working with a licensed immigration advisor
+10. Keep tone professional but warm and personable
+11. End with ONLY ONE sign-off: "Warm regards," followed by a line break, then the name "{user_profile['name']}"
+12. Do NOT add any postscripts, additional signatures, or extra contact information
+13. Do NOT repeat the signature or name multiple times
 
-Write the complete cover letter now:"""
+Write only the complete cover letter, nothing else:"""
 
     response = client.messages.create(
         model="claude-3-5-haiku-20241022",
