@@ -550,13 +550,21 @@ def upload_gazette_csv():
             return jsonify({'success': False, 'error': 'File must be a CSV'})
         
         csv_content = file.read().decode('utf-8')
-        csv_reader = csv.DictReader(StringIO(csv_content))
+        
+        # Auto-detect delimiter (comma or semicolon)
+        first_line = csv_content.split('\n')[0]
+        delimiter = ';' if ';' in first_line else ','
+        print(f"   📋 Detected delimiter: '{delimiter}'")
+        
+        csv_reader = csv.DictReader(StringIO(csv_content), delimiter=delimiter)
         
         rows = list(csv_reader)
         if not rows:
             return jsonify({'success': False, 'error': 'CSV file is empty'})
         
         first_row = rows[0]
+        print(f"   📋 CSV columns: {list(first_row.keys())}")
+        
         is_seek_format = 'Hiring Company' in first_row and 'Position' in first_row
         is_gazette_format = 'Title' in first_row and 'Employer' in first_row
         
