@@ -56,6 +56,8 @@ Description: {(job_data.get('description') or 'Teaching position in New Zealand 
 8. Do NOT include placeholder addresses - start with date, then greeting
 9. Sign off with "Warm regards" or "Kind regards"
 10. IMPORTANT: Use the ACTUAL date "{current_date}" - never write "(date)" or "[date]"
+11. IMPORTANT: Include that I am currently based in South Africa and am available to relocate within 6 weeks notice
+12. IMPORTANT: Mention that I am working with a licensed immigration advisor to ensure a smooth transition to New Zealand
 
 Write the complete cover letter now:"""
 
