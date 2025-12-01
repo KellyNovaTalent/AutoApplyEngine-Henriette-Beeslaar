@@ -449,7 +449,7 @@ def analyze_new_jobs():
             WHERE status = 'new' 
             AND (match_score IS NULL OR match_score = 0)
             ORDER BY id DESC
-            LIMIT 100
+            LIMIT 300
         ''')
         new_jobs = cursor.fetchall()
         conn.close()
@@ -602,6 +602,11 @@ def upload_gazette_csv():
                     continue
                 
                 if contact_email == 'N/A' or not contact_email:
+                    contact_email = None
+                
+                # Validate email - must contain @ and not be a URL
+                if contact_email and ('@' not in contact_email or contact_email.startswith('http')):
+                    print(f"   ⚠️  Invalid email detected: {contact_email[:50]}... - skipping email")
                     contact_email = None
                 
                 job_data = {
