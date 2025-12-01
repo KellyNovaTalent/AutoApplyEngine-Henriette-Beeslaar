@@ -200,8 +200,8 @@ def get_job_stats() -> Dict[str, Any]:
     cursor.execute("SELECT COUNT(*) FROM jobs WHERE match_score < 50 OR match_score IS NULL")
     low_matches = cursor.fetchone()[0]
     
-    # Pending review: jobs that need action (ready_to_apply status with high match scores)
-    cursor.execute("SELECT COUNT(*) FROM jobs WHERE status = 'ready_to_apply' AND match_score >= 70")
+    # Pending review: ALL ready_to_apply jobs (cover letters ready, need manual application)
+    cursor.execute("SELECT COUNT(*) FROM jobs WHERE status = 'ready_to_apply'")
     pending_review = cursor.fetchone()[0]
     
     conn.close()
