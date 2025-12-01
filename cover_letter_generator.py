@@ -46,21 +46,25 @@ Location: {job_data.get('location', 'New Zealand')}
 Description: {(job_data.get('description') or 'Teaching position in New Zealand school')[:1500]}
 
 **Requirements:**
-1. Write a compelling, professional cover letter (250-350 words)
-2. Start with the date "{current_date}" at the top
-3. Include a greeting (Dear Hiring Manager / Dear Principal)
-4. Highlight relevant experience with special needs students (autism, Down syndrome, ADHD, intellectual disabilities)
-5. Emphasize 18+ years of Foundation Phase and Special Education teaching experience
-6. Mention NZ Teaching Registration and B.Ed Foundation Phase qualification
-7. Show enthusiasm for the specific role and school
-8. Include that I am currently based in South Africa and available to relocate within 6 weeks notice
-9. Mention I am working with a licensed immigration advisor
-10. Keep tone professional but warm and personable
-11. End with ONLY ONE sign-off: "Warm regards," followed by a line break, then the name "{user_profile['name']}"
-12. Do NOT add any postscripts, additional signatures, or extra contact information
-13. Do NOT repeat the signature or name multiple times
+1. Write ONLY a professional cover letter (250-350 words)
+2. Format: Date → Greeting → Body paragraphs → Closing signature
+3. Start with: {current_date}
+4. Include greeting: Dear Hiring Manager (or Dear Principal/Headmaster)
+5. Body: Highlight special needs experience (autism, Down syndrome, ADHD)
+6. Emphasize 18+ years Foundation Phase & Special Education background
+7. Mention NZ Teaching Registration and B.Ed Foundation Phase
+8. State: "I am currently based in South Africa and available to relocate within 6 weeks notice"
+9. State: "I am working with a licensed immigration advisor for a smooth transition to New Zealand"
+10. Professional but warm tone
+11. CRITICAL: End with EXACTLY this format:
+    Warm regards,
+    Henriëtte Charlotte Beeslaar
 
-Write only the complete cover letter, nothing else:"""
+12. DO NOT add anything after "Henriëtte Charlotte Beeslaar" - no email, no phone, no WhatsApp, no LinkedIn, no extra text
+13. DO NOT include postscripts, attachments mentions, or any content beyond the signature
+14. Output ONLY the cover letter text - nothing before or after
+
+Generate the complete cover letter now:"""
 
     response = client.messages.create(
         model="claude-3-5-haiku-20241022",
@@ -80,6 +84,20 @@ Write only the complete cover letter, nothing else:"""
     
     if not cover_letter:
         cover_letter = str(response.content)
+    
+    if cover_letter:
+        lines = cover_letter.split('\n')
+        final_lines = []
+        signature_found = False
+        
+        for line in lines:
+            final_lines.append(line)
+            if user_profile['name'] in line:
+                signature_found = True
+                break
+        
+        if signature_found:
+            cover_letter = '\n'.join(final_lines)
     
     print(f"✍️  Generated cover letter ({len(cover_letter)} chars)")
     return cover_letter
