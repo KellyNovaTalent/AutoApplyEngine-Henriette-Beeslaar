@@ -93,7 +93,7 @@ def generate_email_body(job_data: dict, cover_letter: str) -> str:
     """
     Generate the email body for a job application.
     Uses the cover letter as the main body (it already has proper greeting and signature).
-    Adds a brief note about attachments at the end.
+    Adds a brief note about attachments and contact details at the end.
     """
     user_profile = USER_PROFILE
     
@@ -102,6 +102,9 @@ def generate_email_body(job_data: dict, cover_letter: str) -> str:
 I have attached my CV for your review. I am currently based in South Africa and available to relocate within 6 weeks notice. I am working with a licensed immigration advisor to ensure a smooth transition to New Zealand.
 
 I would welcome the opportunity to discuss how my experience and skills align with your school's needs.
+
+WhatsApp: +27 71 680 0138
+LinkedIn: https://www.linkedin.com/in/henri%C3%ABtte-charlotte-beeslaar-56a33536b/
 """
     
     return email_body.strip()
