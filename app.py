@@ -19,11 +19,14 @@ load_dotenv()
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD')
+CLIENT_PASSWORD = os.environ.get('CLIENT_PASSWORD')
 
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable must be set for secure session management")
 if not AUTH_PASSWORD:
     raise ValueError("AUTH_PASSWORD environment variable must be set for authentication")
+if not CLIENT_PASSWORD:
+    raise ValueError("CLIENT_PASSWORD environment variable must be set for client dashboard access")
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -51,6 +54,37 @@ def login():
 def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
+
+def client_login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('client_logged_in'):
+            return redirect(url_for('client_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/client')
+@client_login_required
+def client_dashboard():
+    jobs = get_all_jobs({'status': 'applied'})
+    unique_companies = len(set(job.get('company_name', '') for job in jobs))
+    return render_template('client_dashboard.html', jobs=jobs, unique_companies=unique_companies)
+
+@app.route('/client/login', methods=['GET', 'POST'])
+def client_login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == CLIENT_PASSWORD:
+            session['client_logged_in'] = True
+            return redirect(url_for('client_dashboard'))
+        else:
+            return render_template('client_login.html', error='Invalid password')
+    return render_template('client_login.html')
+
+@app.route('/client/logout')
+def client_logout():
+    session.pop('client_logged_in', None)
+    return redirect(url_for('client_login'))
 
 @app.route('/')
 @login_required
