@@ -20,3 +20,4 @@ dist/
 build/
 *.egg-info/
 .DS_Store
+attached_assets/
