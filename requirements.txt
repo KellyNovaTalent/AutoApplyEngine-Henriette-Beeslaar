@@ -16,3 +16,4 @@ fpdf
 playwright
 PyMuPDF
 werkzeug
+gunicorn
