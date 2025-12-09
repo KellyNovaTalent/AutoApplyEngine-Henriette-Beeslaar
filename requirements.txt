@@ -7,13 +7,15 @@ beautifulsoup4==4.12.2
 APScheduler==3.10.4
 python-dotenv==1.0.0
 anthropic
-apify-client
 requests
 apify-client
-requests
 fpdf2
 fpdf
 playwright
 PyMuPDF
 werkzeug
 gunicorn
+streamlit==1.38.0
+selenium==4.15.2
+webdriver-manager==4.0.2
+openai==1.47.0
