@@ -6,17 +6,19 @@ import pandas as pd
 import re
 import PyPDF2
 
-# === DEBUG: Check if key is loaded ===
+# Set page config FIRST (required by Streamlit)
+st.set_page_config(page_title="AutoApply Engine – Henriette", layout="wide")
+
+# Now load and check key
 api_key = os.getenv("OPENAI_API_KEY")
 if api_key:
-    st.sidebar.success("OpenAI key loaded successfully!")
+    st.sidebar.success("✅ OpenAI key loaded!")
 else:
-    st.sidebar.error("No OpenAI key found! Check Secrets in Streamlit Cloud")
+    st.sidebar.error("❌ No OpenAI key found! Check Secrets in Streamlit Cloud")
     st.stop()
 
 openai.api_key = api_key
 
-st.set_page_config(page_title="AutoApply Engine – Henriette", layout="wide")
 st.title("AutoApply Engine – Henriette Beeslaar")
 st.markdown("Upload CV + job list → AI generates perfect applications instantly")
 
